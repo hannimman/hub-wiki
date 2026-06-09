@@ -47,9 +47,29 @@ export default async function HomePage() {
         </p>
       )}
 
-      <p style={{ marginTop: 24, color: "#666" }}>
-        위키 기능(문서 작성·검색 등)은 다음 단계에서 추가됩니다.
-      </p>
+      <div style={{ marginTop: 28 }}>
+        {user ? (
+          <Link
+            href="/wiki"
+            style={{
+              display: "inline-block",
+              padding: "12px 24px",
+              borderRadius: 10,
+              background: "#3b82f6",
+              color: "#fff",
+              textDecoration: "none",
+              fontWeight: 700,
+              fontSize: 16,
+            }}
+          >
+            📖 위키 문서 보기
+          </Link>
+        ) : (
+          <p style={{ color: "#666" }}>
+            로그인하면 위키 문서를 보고 작성할 수 있어요.
+          </p>
+        )}
+      </div>
     </main>
   );
 }
