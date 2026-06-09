@@ -20,13 +20,24 @@ export async function PATCH(
     if (!body) throw new AuthError("잘못된 요청입니다.", 400);
     const title = String(body.title ?? "").trim();
     const content = String(body.content ?? "");
+    const summary = String(body.summary ?? "").trim().slice(0, 200);
+    const baseRevisionId = body.baseRevisionId
+      ? String(body.baseRevisionId)
+      : null;
     if (title.length < 1 || title.length > 200)
       throw new AuthError("제목은 1~200자여야 합니다.", 400);
     if (content.length > 200000)
       throw new AuthError("본문이 너무 깁니다.", 400);
 
-    await updatePage(user.id, id, title, content);
-    return NextResponse.json({ ok: true, slug: page.slug });
+    const result = await updatePage(
+      user.id,
+      id,
+      title,
+      content,
+      summary,
+      baseRevisionId
+    );
+    return NextResponse.json({ ok: true, slug: page.slug, changed: result.changed });
   } catch (e) {
     if (e instanceof AuthError)
       return NextResponse.json({ error: e.message }, { status: e.status });

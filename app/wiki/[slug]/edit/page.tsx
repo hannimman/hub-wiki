@@ -30,6 +30,7 @@ export default async function EditPage({
       <PageEditor
         mode="edit"
         pageId={page.id}
+        baseRevisionId={page.current_revision_id}
         initialTitle={page.title}
         initialContent={page.content}
       />

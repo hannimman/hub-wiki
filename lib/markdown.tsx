@@ -59,7 +59,25 @@ function MermaidDiagram({ chart }: { chart: string }) {
   return <div ref={ref} style={{ textAlign: "center", margin: "16px 0" }} />;
 }
 
-export default function MarkdownView({ content }: { content: string }) {
+// [[문서제목]] → 내부 링크로 변환.
+//  * linkMap 에 있으면 해당 slug 로(파란 링크), 없으면 새 문서 작성 링크로(빨간 링크).
+function preprocessWikiLinks(md: string, linkMap?: Record<string, string>): string {
+  return md.replace(/\[\[([^\]\n]+)\]\]/g, (_m, raw: string) => {
+    const t = raw.trim();
+    const slug = linkMap?.[t];
+    if (slug) return `[${t}](/wiki/${slug})`;
+    return `[${t}](/wiki/new?title=${encodeURIComponent(t)})`;
+  });
+}
+
+export default function MarkdownView({
+  content,
+  linkMap,
+}: {
+  content: string;
+  linkMap?: Record<string, string>;
+}) {
+  const processed = preprocessWikiLinks(content, linkMap);
   return (
     <div className="markdown-body">
       <ReactMarkdown
@@ -74,9 +92,22 @@ export default function MarkdownView({ content }: { content: string }) {
             }
             return <code className={className}>{children}</code>;
           },
+          a(props) {
+            const href = props.href || "";
+            const missing = href.startsWith("/wiki/new?title=");
+            return (
+              <a
+                href={href}
+                style={{ color: missing ? "#d9534f" : "#3b82f6" }}
+                title={missing ? "없는 문서 — 클릭해서 새로 만들기" : undefined}
+              >
+                {props.children}
+              </a>
+            );
+          },
         }}
       >
-        {content}
+        {processed}
       </ReactMarkdown>
     </div>
   );

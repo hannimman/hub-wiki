@@ -16,17 +16,20 @@ const inputStyle: React.CSSProperties = {
 export default function PageEditor({
   mode,
   pageId,
+  baseRevisionId,
   initialTitle = "",
   initialContent = "",
 }: {
   mode: "new" | "edit";
   pageId?: string;
+  baseRevisionId?: string | null;
   initialTitle?: string;
   initialContent?: string;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
+  const [summary, setSummary] = useState("");
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,7 +43,7 @@ export default function PageEditor({
       const res = await fetch(url, {
         method,
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({ title, content, summary, baseRevisionId }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -118,6 +121,14 @@ export default function PageEditor({
           )}
         </div>
       )}
+
+      <input
+        value={summary}
+        onChange={(e) => setSummary(e.target.value)}
+        placeholder="변경 요약 (선택) — 무엇을 왜 바꿨는지"
+        maxLength={200}
+        style={{ ...inputStyle, marginTop: 12, fontSize: 14 }}
+      />
 
       {error && (
         <div style={{ color: "#c62828", marginTop: 12 }}>{error}</div>

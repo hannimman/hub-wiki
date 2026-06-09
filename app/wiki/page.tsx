@@ -52,7 +52,7 @@ export default async function WikiListPage({
         <input
           name="q"
           defaultValue={q ?? ""}
-          placeholder="제목 검색…"
+          placeholder="제목·본문 검색…"
           style={{
             width: "100%",
             padding: "10px 12px",
@@ -63,6 +63,12 @@ export default async function WikiListPage({
           }}
         />
       </form>
+
+      <div style={{ marginBottom: 12 }}>
+        <Link href="/wiki/changes" style={{ color: "#3b82f6", fontSize: 14 }}>
+          🕒 최근 변경 보기
+        </Link>
+      </div>
 
       {pages.length === 0 ? (
         <p style={{ color: "#888" }}>

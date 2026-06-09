@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { getPageBySlug } from "@/lib/pages";
+import { getPageBySlug, getTitleSlugMap } from "@/lib/pages";
 import MarkdownView from "@/lib/markdown";
 import PageActions from "./PageActions";
 
@@ -26,6 +26,7 @@ export default async function PageView({
   const { slug } = await params;
   const page = await getPageBySlug(slug);
   if (!page) notFound();
+  const linkMap = await getTitleSlugMap();
 
   return (
     <main style={wrap}>
@@ -48,7 +49,7 @@ export default async function PageView({
         마지막 수정: {new Date(page.updated_at).toLocaleString("ko-KR")}
       </div>
 
-      <MarkdownView content={page.content} />
+      <MarkdownView content={page.content} linkMap={linkMap} />
     </main>
   );
 }

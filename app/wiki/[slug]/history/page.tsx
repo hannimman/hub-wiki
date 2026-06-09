@@ -56,8 +56,15 @@ export default async function HistoryPage({
                 )}
               </div>
               <div style={{ color: "#999", fontSize: 12 }}>
-                {new Date(r.created_at).toLocaleString("ko-KR")} · {r.title}
+                {new Date(r.created_at).toLocaleString("ko-KR")}
+                {r.summary ? ` · ${r.summary}` : ""}
               </div>
+              <Link
+                href={`/wiki/${slug}/rev/${r.id}`}
+                style={{ fontSize: 12, color: "#3b82f6" }}
+              >
+                변경내역 보기
+              </Link>
             </div>
             {i !== 0 && (
               <RestoreButton pageId={page.id} revisionId={r.id} />

@@ -11,14 +11,19 @@ const wrap: React.CSSProperties = {
   fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
 };
 
-export default async function NewPage() {
+export default async function NewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ title?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  const { title } = await searchParams;
 
   return (
     <main style={wrap}>
       <h1 style={{ marginBottom: 16 }}>새 문서</h1>
-      <PageEditor mode="new" />
+      <PageEditor mode="new" initialTitle={title ?? ""} />
     </main>
   );
 }
