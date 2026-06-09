@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { getAdminDb } from "./db";
+import type { AvatarConfig } from "./avatars";
 
 // ──────────────────────────────────────────────
 // 자체 인증 (Supabase Auth 미사용 — 브라우저가 supabase.co 직접 호출 불가하므로).
@@ -22,6 +23,7 @@ export type SessionUser = {
   display_name: string;
   role: Role;
   avatar: string;
+  avatar_config: AvatarConfig | null;
   is_active: boolean;
 };
 
@@ -95,7 +97,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   const db = getAdminDb();
   const { data, error } = await db
     .from("users")
-    .select("id, username, display_name, role, avatar, is_active")
+    .select("id, username, display_name, role, avatar, avatar_config, is_active")
     .eq("id", uid)
     .maybeSingle();
 

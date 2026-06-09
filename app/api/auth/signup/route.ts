@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/db";
 import { hashPassword, createSession, AuthError } from "@/lib/auth";
+import { sanitizeConfig, PRESET_IDS } from "@/lib/avatars";
 
 export const dynamic = "force-dynamic";
 
 const USERNAME_RE = /^[a-z0-9_.]{3,20}$/;
-const ALLOWED_AVATARS = new Set([
-  "f1", "m1", "f2", "m2", "f3", "m3", "f4", "m4",
-]);
 
 // 온보딩(초대 가입). "가입" 버튼을 눌러 이 API가 성공해야 초대코드가 used 처리된다.
 export async function POST(req: Request) {
@@ -20,7 +18,12 @@ export async function POST(req: Request) {
     const username = String(body.username ?? "").trim().toLowerCase();
     const password = String(body.password ?? "");
     let avatar = String(body.avatar ?? "m1").trim();
-    if (!ALLOWED_AVATARS.has(avatar)) avatar = "m1";
+    let avatarConfig: ReturnType<typeof sanitizeConfig> | null = null;
+    if (avatar === "custom") {
+      avatarConfig = sanitizeConfig(body.avatarConfig);
+    } else if (!PRESET_IDS.includes(avatar)) {
+      avatar = "m1";
+    }
 
     if (!token) throw new AuthError("초대 토큰이 없습니다.", 400);
     if (displayName.length < 1 || displayName.length > 30)
@@ -65,6 +68,7 @@ export async function POST(req: Request) {
         password_hash,
         role: claimed.role,
         avatar,
+        avatar_config: avatarConfig,
         invited_by: claimed.created_by,
       })
       .select("id")

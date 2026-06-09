@@ -31,13 +31,25 @@ export default async function HomePage() {
             borderRadius: 12,
           }}
         >
-          <Avatar id={user.avatar} size={48} />
+          <Avatar id={user.avatar} config={user.avatar_config} size={48} />
           <div style={{ flex: 1 }}>
             <div>
               <b>{user.display_name}</b> 님 {user.role === "admin" ? "👑 관리자" : ""}
             </div>
             <div style={{ color: "#888", fontSize: 13 }}>@{user.username}</div>
           </div>
+          <Link
+            href="/me"
+            style={{
+              padding: "8px 14px",
+              borderRadius: 8,
+              border: "1px solid #ccc",
+              textDecoration: "none",
+              color: "#333",
+            }}
+          >
+            마이페이지
+          </Link>
           <LogoutButton />
         </div>
       ) : (

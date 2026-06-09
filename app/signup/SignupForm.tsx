@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AVATARS, Avatar } from "@/lib/avatars";
+import AvatarPicker, { type AvatarValue } from "../AvatarPicker";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -29,7 +29,7 @@ export default function SignupForm({
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [avatar, setAvatar] = useState("m1");
+  const [avatar, setAvatar] = useState<AvatarValue>({ id: "m1", config: null });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -41,7 +41,14 @@ export default function SignupForm({
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token, displayName, username, password, avatar }),
+        body: JSON.stringify({
+          token,
+          displayName,
+          username,
+          password,
+          avatar: avatar.id,
+          avatarConfig: avatar.config,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -74,37 +81,8 @@ export default function SignupForm({
         </div>
       )}
 
-      <label style={labelStyle}>아바타 선택</label>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 10,
-        }}
-      >
-        {AVATARS.map((a) => (
-          <button
-            type="button"
-            key={a.id}
-            onClick={() => setAvatar(a.id)}
-            aria-pressed={avatar === a.id}
-            title={a.label}
-            style={{
-              padding: 6,
-              borderRadius: 12,
-              cursor: "pointer",
-              background: "#fff",
-              border:
-                avatar === a.id
-                  ? "3px solid #3b82f6"
-                  : "3px solid transparent",
-              outline: avatar === a.id ? "none" : "1px solid #e2e2e2",
-            }}
-          >
-            <Avatar id={a.id} size={64} />
-          </button>
-        ))}
-      </div>
+      <label style={labelStyle}>아바타</label>
+      <AvatarPicker value={avatar} onChange={setAvatar} />
 
       <label style={labelStyle} htmlFor="displayName">
         이름

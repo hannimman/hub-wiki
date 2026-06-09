@@ -47,7 +47,7 @@ export default async function HistoryPage({
               borderBottom: "1px solid #eee",
             }}
           >
-            <Avatar id={r.author_avatar} size={36} />
+            <Avatar id={r.author_avatar} config={r.author_config} size={36} />
             <div style={{ flex: 1 }}>
               <div>
                 <b>{r.author_name ?? "알 수 없음"}</b>{" "}

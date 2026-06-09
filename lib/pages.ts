@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import { getAdminDb } from "./db";
+import type { AvatarConfig } from "./avatars";
 
 // 위키 문서 서버 로직. 모두 service_role 키(getAdminDb)로 동작.
 // 조회는 공개, 쓰기(create/update/delete/restore)는 호출하는 API 라우트가
@@ -30,6 +31,7 @@ export type RevisionItem = {
   created_at: string;
   author_name: string | null;
   author_avatar: string | null;
+  author_config: AvatarConfig | null;
 };
 
 function genSlug(): string {
@@ -181,7 +183,9 @@ export async function listRevisions(pageId: string): Promise<RevisionItem[]> {
   const db = getAdminDb();
   const { data, error } = await db
     .from("page_revisions")
-    .select("id, title, created_at, users:author_id (display_name, avatar)")
+    .select(
+      "id, title, created_at, users:author_id (display_name, avatar, avatar_config)"
+    )
     .eq("page_id", pageId)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -193,6 +197,7 @@ export async function listRevisions(pageId: string): Promise<RevisionItem[]> {
     created_at: r.created_at,
     author_name: r.users?.display_name ?? null,
     author_avatar: r.users?.avatar ?? null,
+    author_config: r.users?.avatar_config ?? null,
   }));
 }
 
