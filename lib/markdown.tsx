@@ -2,6 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 import { useEffect, useRef, useState } from "react";
 
 // 위키 마크다운 렌더러.
@@ -82,6 +83,21 @@ export default function MarkdownView({
     <div className="markdown-body">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[
+          [
+            rehypeHighlight,
+            {
+              // 모르는 언어는 에러 없이 평문 처리
+              ignoreMissing: true,
+              // jsx/tsx/js/ts/java/csharp/bash/sql/xml/html 등은 기본 지원.
+              // 추가 별칭: jsp·vue→xml, sql 방언→sql.
+              aliases: {
+                xml: ["jsp", "vue"],
+                sql: ["tsql", "t-sql", "psql", "p-sql", "plsql"],
+              },
+            },
+          ],
+        ]}
         components={{
           code(props) {
             const { className, children } = props;

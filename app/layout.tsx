@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import "./globals.css";
+import "highlight.js/styles/github.css";
 
 export const metadata = {
   title: "팀 위키",
