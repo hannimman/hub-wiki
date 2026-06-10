@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MarkdownView from "@/lib/markdown";
 
@@ -43,6 +43,13 @@ export default function PageEditor({
   const [ratingsEnabled, setRatingsEnabled] = useState(initialRatingsEnabled);
   const [parentId, setParentId] = useState<string>(initialParentId ?? "");
   const [tab, setTab] = useState<"write" | "preview">("write");
+
+  // 같은 /wiki/new 화면에서 다른 폴더의 "＋글"을 눌러 ?parent= 만 바뀌는 경우,
+  // 컴포넌트가 재마운트되지 않으므로 상위 폴더 선택을 prop 변화에 맞춰 동기화한다.
+  // (작성 중인 제목/본문은 유지)
+  useEffect(() => {
+    setParentId(initialParentId ?? "");
+  }, [initialParentId]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
