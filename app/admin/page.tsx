@@ -1,18 +1,10 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { listInvites } from "@/lib/invites";
 import { listUsers, getStats } from "@/lib/admin";
 import AdminControls from "./AdminControls";
 
 export const dynamic = "force-dynamic";
-
-const wrap: React.CSSProperties = {
-  maxWidth: 900,
-  margin: "32px auto",
-  padding: "0 20px",
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-};
 
 export default async function AdminPage() {
   const user = await getCurrentUser();
@@ -26,10 +18,7 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <main style={wrap}>
-      <Link href="/" style={{ color: "#666", fontSize: 14 }}>
-        ← 홈
-      </Link>
+    <main className="container page">
       <h1>🛡️ 관리자</h1>
       <AdminControls
         invites={invites}

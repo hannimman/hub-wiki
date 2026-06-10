@@ -13,6 +13,8 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
 };
 
+export type ParentOption = { id: string; label: string };
+
 export default function PageEditor({
   mode,
   pageId,
@@ -21,6 +23,8 @@ export default function PageEditor({
   initialContent = "",
   ratingsAllowed = false,
   initialRatingsEnabled = false,
+  parentOptions = [],
+  initialParentId = null,
 }: {
   mode: "new" | "edit";
   pageId?: string;
@@ -29,12 +33,15 @@ export default function PageEditor({
   initialContent?: string;
   ratingsAllowed?: boolean;
   initialRatingsEnabled?: boolean;
+  parentOptions?: ParentOption[];
+  initialParentId?: string | null;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [summary, setSummary] = useState("");
   const [ratingsEnabled, setRatingsEnabled] = useState(initialRatingsEnabled);
+  const [parentId, setParentId] = useState<string>(initialParentId ?? "");
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,6 +61,7 @@ export default function PageEditor({
           summary,
           ratingsEnabled,
           baseRevisionId,
+          parentId: parentId || null,
         }),
       });
       const data = await res.json();
@@ -96,6 +104,30 @@ export default function PageEditor({
         placeholder="문서 제목"
         maxLength={200}
       />
+
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 14,
+          fontSize: 14,
+        }}
+      >
+        <span style={{ color: "#555", whiteSpace: "nowrap" }}>📁 상위 폴더</span>
+        <select
+          value={parentId}
+          onChange={(e) => setParentId(e.target.value)}
+          style={{ ...inputStyle, fontSize: 14, width: "auto", flex: 1 }}
+        >
+          <option value="">(최상위)</option>
+          {parentOptions.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <div style={{ borderBottom: "1px solid #e2e2e2", marginBottom: 10 }}>
         {tabBtn("write", "작성")}

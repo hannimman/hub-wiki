@@ -46,6 +46,17 @@ function secretKey(): Uint8Array {
   return new TextEncoder().encode(s);
 }
 
+export const PASSWORD_MIN = 8;
+export const PASSWORD_MAX = 100;
+
+// 비밀번호 정책 검증. 통과하면 null, 실패하면 사용자용 메시지 반환.
+export function passwordError(plain: string): string | null {
+  if (plain.length < PASSWORD_MIN || plain.length > PASSWORD_MAX) {
+    return `비밀번호는 ${PASSWORD_MIN}자 이상이어야 합니다.`;
+  }
+  return null;
+}
+
 export async function hashPassword(plain: string): Promise<string> {
   return bcrypt.hash(plain, BCRYPT_ROUNDS);
 }
@@ -100,12 +111,13 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   const { data, error } = await db
     .from("users")
     .select(
-      "id, username, display_name, role, avatar, avatar_config, is_active, can_rate, can_view_scores"
+      "id, username, display_name, role, avatar, avatar_config, is_active, can_rate, can_view_scores, needs_password_reset"
     )
     .eq("id", uid)
     .maybeSingle();
 
-  if (error || !data || !data.is_active) return null;
+  // 비활성화 또는 비밀번호 초기화 대기 상태면 세션 무효 → 즉시 로그아웃 효과.
+  if (error || !data || !data.is_active || data.needs_password_reset) return null;
   return data as SessionUser;
 }
 

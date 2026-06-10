@@ -1,44 +1,117 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { Avatar } from "@/lib/avatars";
-import MyAvatarForm from "./MyAvatarForm";
+import {
+  isV2,
+  DEFAULT_AVATAR_V2,
+  AvatarFullV2,
+  type AvatarV2Data,
+} from "@/lib/avatar/render";
+import {
+  getPoints,
+  hasCheckedInToday,
+  listTransactions,
+} from "@/lib/points";
+import AttendanceCard from "./AttendanceCard";
+import PointHistoryButton from "./PointHistoryButton";
+import MyPasswordForm from "./MyPasswordForm";
 
 export const dynamic = "force-dynamic";
 
-const wrap: React.CSSProperties = {
-  maxWidth: 520,
-  margin: "40px auto",
-  padding: "0 20px",
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+const ROLE_LABEL: Record<string, string> = {
+  super: "🦸 슈퍼",
+  admin: "👑 관리자",
+  member: "",
 };
 
 export default async function MyPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  const [points, checkedIn, txs] = await Promise.all([
+    getPoints(user.id),
+    hasCheckedInToday(user.id),
+    listTransactions(user.id, 30),
+  ]);
+
+  const avatarData: AvatarV2Data = isV2(user.avatar_config)
+    ? (user.avatar_config as AvatarV2Data)
+    : DEFAULT_AVATAR_V2;
+
   return (
-    <main style={wrap}>
-      <Link href="/" style={{ color: "#666", fontSize: 14 }}>
-        ← 홈
-      </Link>
+    <main className="container page" style={{ maxWidth: 760 }}>
       <h1>마이페이지</h1>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "16px 0 28px" }}>
-        <Avatar id={user.avatar} config={user.avatar_config} size={64} />
-        <div>
-          <div style={{ fontSize: 18 }}>
-            <b>{user.display_name}</b> {user.role === "admin" ? "👑" : ""}
+      <div
+        style={{
+          display: "flex",
+          gap: 20,
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+          margin: "16px 0 24px",
+        }}
+      >
+        {/* 내 캐릭터 (전신) */}
+        <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              border: "1px solid var(--border)",
+              borderRadius: 14,
+              overflow: "hidden",
+            }}
+          >
+            <AvatarFullV2 data={avatarData} width={180} uid="me" />
           </div>
-          <div style={{ color: "#888", fontSize: 13 }}>@{user.username}</div>
+          <Link
+            href="/me/shop"
+            className="btn btn-primary"
+            style={{ marginTop: 10, width: "100%", justifyContent: "center" }}
+          >
+            🛍️ 아바타 상점 · 꾸미기
+          </Link>
+        </div>
+
+        {/* 프로필 + 포인트 */}
+        <div style={{ flex: 1, minWidth: 260 }}>
+          <div style={{ fontSize: 20 }}>
+            <b>{user.display_name}</b>{" "}
+            {ROLE_LABEL[user.role] && (
+              <span className="role-badge">{ROLE_LABEL[user.role]}</span>
+            )}
+          </div>
+          <div className="muted" style={{ fontSize: 13, marginBottom: 14 }}>
+            @{user.username}
+          </div>
+
+          <div className="card" style={{ marginBottom: 12 }}>
+            <div
+              className="row"
+              style={{ marginBottom: 10, flexWrap: "wrap" }}
+            >
+              <span style={{ fontSize: 15 }}>
+                내 포인트:{" "}
+                <b style={{ color: "#b45309" }}>
+                  🪙 {points.toLocaleString()}P
+                </b>
+              </span>
+              <PointHistoryButton txs={txs} />
+            </div>
+            <AttendanceCard checkedIn={checkedIn} />
+          </div>
         </div>
       </div>
 
-      <h2 style={{ fontSize: 18 }}>아바타 변경</h2>
-      <MyAvatarForm
-        initialAvatar={user.avatar}
-        initialConfig={user.avatar_config}
-      />
+      <h2
+        style={{
+          fontSize: 18,
+          marginTop: 36,
+          paddingTop: 24,
+          borderTop: "1px solid var(--border)",
+        }}
+      >
+        비밀번호 변경
+      </h2>
+      <MyPasswordForm />
     </main>
   );
 }

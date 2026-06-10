@@ -12,6 +12,7 @@ export type AdminUser = {
   is_active: boolean;
   can_rate: boolean;
   can_view_scores: boolean;
+  needs_password_reset: boolean;
   avatar: string;
   avatar_config: AvatarConfig | null;
   created_at: string;
@@ -22,11 +23,22 @@ export async function listUsers(): Promise<AdminUser[]> {
   const { data, error } = await db
     .from("users")
     .select(
-      "id, username, display_name, role, is_active, can_rate, can_view_scores, avatar, avatar_config, created_at"
+      "id, username, display_name, role, is_active, can_rate, can_view_scores, needs_password_reset, avatar, avatar_config, created_at"
     )
     .order("created_at", { ascending: true });
   if (error) throw new Error("사용자 조회 실패: " + error.message);
   return (data ?? []) as AdminUser[];
+}
+
+// 대상 사용자의 역할 조회 (권한 검사용). 없으면 null.
+export async function getUserRole(id: string): Promise<Role | null> {
+  const db = getAdminDb();
+  const { data } = await db
+    .from("users")
+    .select("role")
+    .eq("id", id)
+    .maybeSingle();
+  return (data?.role as Role) ?? null;
 }
 
 // 필드 화이트리스트 갱신. role/can_rate/can_view_scores 는 슈퍼만.
@@ -38,6 +50,9 @@ export async function updateUserFields(
   const patch: Record<string, unknown> = {};
 
   if ("is_active" in fields) patch.is_active = !!fields.is_active;
+
+  // 비밀번호 초기화: 관리자·슈퍼 공통. true 일 때만 플래그를 세운다.
+  if (fields.reset_password === true) patch.needs_password_reset = true;
 
   if (isSuper) {
     if (

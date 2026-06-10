@@ -7,13 +7,6 @@ import RestoreButton from "../RestoreButton";
 
 export const dynamic = "force-dynamic";
 
-const wrap: React.CSSProperties = {
-  maxWidth: 820,
-  margin: "32px auto",
-  padding: "0 20px",
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-};
-
 export default async function HistoryPage({
   params,
 }: {
@@ -29,8 +22,8 @@ export default async function HistoryPage({
   const revisions = await listRevisions(page.id);
 
   return (
-    <main style={wrap}>
-      <Link href={`/wiki/${slug}`} style={{ color: "#666", fontSize: 14 }}>
+    <main className="container page">
+      <Link href={`/wiki/${slug}`} style={{ color: "var(--muted)", fontSize: 14 }}>
         ← {page.title}
       </Link>
       <h1 style={{ marginTop: 8 }}>수정 이력</h1>

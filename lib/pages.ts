@@ -18,6 +18,7 @@ export type PageDetail = {
   slug: string;
   title: string;
   parent_id: string | null;
+  is_folder: boolean;
   current_revision_id: string | null;
   created_by: string | null;
   updated_at: string;
@@ -79,7 +80,7 @@ export async function getPageBySlug(slug: string): Promise<PageDetail | null> {
   const { data: page } = await db
     .from("pages")
     .select(
-      "id, slug, title, parent_id, current_revision_id, created_by, is_deleted, updated_at, ratings_enabled"
+      "id, slug, title, parent_id, is_folder, current_revision_id, created_by, is_deleted, updated_at, ratings_enabled"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -101,6 +102,7 @@ export async function getPageBySlug(slug: string): Promise<PageDetail | null> {
     slug: page.slug,
     title: page.title,
     parent_id: page.parent_id,
+    is_folder: page.is_folder ?? false,
     current_revision_id: page.current_revision_id,
     created_by: page.created_by,
     updated_at: page.updated_at,
@@ -131,6 +133,230 @@ export async function getTitleSlugMap(): Promise<Record<string, string>> {
   const map: Record<string, string> = {};
   for (const p of data ?? []) map[(p as any).title] = (p as any).slug;
   return map;
+}
+
+// ── 폴더(페이지 트리) ─────────────────────────────
+export type PageTreeNode = {
+  id: string;
+  slug: string;
+  title: string;
+  parent_id: string | null;
+  is_folder: boolean;
+  updated_at: string;
+};
+
+export type ParentOption = { id: string; label: string };
+
+// 삭제되지 않은 전체 문서/폴더(부모정보 포함) — 트리/경로/상위선택에 공용으로 쓴다.
+export async function listTree(): Promise<PageTreeNode[]> {
+  const db = getAdminDb();
+  const { data, error } = await db
+    .from("pages")
+    .select("id, slug, title, parent_id, is_folder, updated_at")
+    .eq("is_deleted", false)
+    .order("is_folder", { ascending: false })
+    .order("title", { ascending: true })
+    .limit(2000);
+  if (error) throw new Error("문서 트리 조회 실패: " + error.message);
+  return (data ?? []) as PageTreeNode[];
+}
+
+// parent_id 가 존재하는(삭제 안 된) 문서를 가리키지 않으면 최상위로 간주.
+function effectiveParent(node: PageTreeNode, ids: Set<string>): string | null {
+  return node.parent_id && ids.has(node.parent_id) ? node.parent_id : null;
+}
+
+// rootId 의 모든 하위(자손) id 집합 — 순환참조 방지·삭제검사용.
+function descendantSet(all: PageTreeNode[], rootId: string): Set<string> {
+  const childrenOf = new Map<string, string[]>();
+  for (const p of all) {
+    if (!p.parent_id) continue;
+    if (!childrenOf.has(p.parent_id)) childrenOf.set(p.parent_id, []);
+    childrenOf.get(p.parent_id)!.push(p.id);
+  }
+  const out = new Set<string>();
+  const stack = [rootId];
+  while (stack.length) {
+    const cur = stack.pop()!;
+    for (const c of childrenOf.get(cur) ?? []) {
+      if (!out.has(c)) {
+        out.add(c);
+        stack.push(c);
+      }
+    }
+  }
+  return out;
+}
+
+// 상위 폴더 선택 옵션(들여쓰기된 평탄 트리). excludeId 의 자기·자손은 제외(순환 방지).
+export async function listParentOptions(
+  excludeId?: string
+): Promise<ParentOption[]> {
+  const all = await listTree();
+  // 상위 후보는 폴더만 (문서 안에는 넣지 않는다)
+  const folders = all.filter((p) => p.is_folder);
+  const ids = new Set(folders.map((p) => p.id));
+
+  const exclude = new Set<string>();
+  if (excludeId) {
+    exclude.add(excludeId);
+    for (const d of descendantSet(all, excludeId)) exclude.add(d);
+  }
+
+  const childrenOf = new Map<string | null, PageTreeNode[]>();
+  for (const p of folders) {
+    const k = effectiveParent(p, ids);
+    if (!childrenOf.has(k)) childrenOf.set(k, []);
+    childrenOf.get(k)!.push(p);
+  }
+
+  const out: ParentOption[] = [];
+  const walk = (parentId: string | null, depth: number) => {
+    for (const node of childrenOf.get(parentId) ?? []) {
+      if (exclude.has(node.id)) continue;
+      const indent = "  ".repeat(depth);
+      out.push({ id: node.id, label: `${indent}${depth > 0 ? "└ " : ""}${node.title}` });
+      walk(node.id, depth + 1);
+    }
+  };
+  walk(null, 0);
+  return out;
+}
+
+// 경로(breadcrumb): 루트 → 부모 순서. 순환이 있어도 guard 로 안전.
+export async function getAncestors(
+  pageId: string
+): Promise<{ slug: string; title: string }[]> {
+  const all = await listTree();
+  const byId = new Map(all.map((p) => [p.id, p]));
+  const ids = new Set(all.map((p) => p.id));
+  const chain: { slug: string; title: string }[] = [];
+  const self = byId.get(pageId);
+  let cur = self ? effectiveParent(self, ids) : null;
+  let guard = 0;
+  const seen = new Set<string>();
+  while (cur && guard++ < 50 && !seen.has(cur)) {
+    seen.add(cur);
+    const node = byId.get(cur);
+    if (!node) break;
+    chain.unshift({ slug: node.slug, title: node.title });
+    cur = effectiveParent(node, ids);
+  }
+  return chain;
+}
+
+// 하위(직속 자식) 문서 존재 여부 — 폴더 삭제 차단용.
+export async function hasChildren(pageId: string): Promise<boolean> {
+  const db = getAdminDb();
+  const { count } = await db
+    .from("pages")
+    .select("id", { count: "exact", head: true })
+    .eq("parent_id", pageId)
+    .eq("is_deleted", false);
+  return (count ?? 0) > 0;
+}
+
+// 폴더 생성 — 본문/리비전/평가 없이 컨테이너만 만든다. 상위는 폴더만 허용.
+export async function createFolder(
+  authorId: string,
+  title: string,
+  parentId?: string | null
+): Promise<{ id: string; slug: string }> {
+  const db = getAdminDb();
+  const t = title.trim();
+  if (t.length < 1 || t.length > 200)
+    throw new AuthError("폴더 이름은 1~200자여야 합니다.", 400);
+
+  if (parentId) {
+    const { data: parent } = await db
+      .from("pages")
+      .select("id, is_folder, is_deleted")
+      .eq("id", parentId)
+      .maybeSingle();
+    if (!parent || parent.is_deleted || !parent.is_folder)
+      throw new AuthError("상위 폴더가 올바르지 않습니다.", 400);
+  }
+
+  const slug = genSlug();
+  const { data: page, error } = await db
+    .from("pages")
+    .insert({
+      slug,
+      title: t,
+      parent_id: parentId ?? null,
+      created_by: authorId,
+      is_folder: true,
+    })
+    .select("id, slug")
+    .single();
+  if (error || !page)
+    throw new Error("폴더 생성 실패: " + (error?.message ?? ""));
+  return { id: page.id, slug: page.slug };
+}
+
+// 폴더 이름변경/이동 (본문 없음). 순환·자기참조 방지, 상위는 폴더만.
+export async function updateFolder(
+  pageId: string,
+  title?: string,
+  parentId?: string | null
+): Promise<void> {
+  const db = getAdminDb();
+  const patch: Record<string, unknown> = {};
+
+  if (title !== undefined) {
+    const t = title.trim();
+    if (t.length < 1 || t.length > 200)
+      throw new AuthError("폴더 이름은 1~200자여야 합니다.", 400);
+    patch.title = t;
+  }
+
+  if (parentId !== undefined) {
+    if (parentId === pageId)
+      throw new AuthError("자기 자신을 상위로 지정할 수 없습니다.", 400);
+    if (parentId) {
+      const all = await listTree();
+      if (descendantSet(all, pageId).has(parentId))
+        throw new AuthError("하위 폴더를 상위로 지정할 수 없습니다.", 400);
+      const parent = all.find((p) => p.id === parentId);
+      if (!parent || !parent.is_folder)
+        throw new AuthError("상위 폴더가 올바르지 않습니다.", 400);
+    }
+    patch.parent_id = parentId;
+  }
+
+  if (Object.keys(patch).length === 0) return;
+  patch.updated_at = nowIso();
+  const { error } = await db.from("pages").update(patch).eq("id", pageId);
+  if (error) throw new Error("폴더 수정 실패: " + error.message);
+}
+
+// 이동(드래그앤드롭) — 폴더/문서 공용. parent_id 만 바꾸면 하위 서브트리는 그대로 따라온다.
+// 상위는 폴더만 허용, 자기 자신/자손으로의 이동은 차단(순환 방지).
+export async function movePage(
+  pageId: string,
+  parentId: string | null
+): Promise<void> {
+  if (parentId === pageId)
+    throw new AuthError("자기 자신 안으로는 옮길 수 없습니다.", 400);
+
+  const all = await listTree();
+  const node = all.find((p) => p.id === pageId);
+  if (!node) throw new AuthError("대상을 찾을 수 없습니다.", 404);
+
+  if (parentId) {
+    if (descendantSet(all, pageId).has(parentId))
+      throw new AuthError("하위 항목 안으로는 옮길 수 없습니다.", 400);
+    const parent = all.find((p) => p.id === parentId);
+    if (!parent || !parent.is_folder)
+      throw new AuthError("폴더 안으로만 옮길 수 있습니다.", 400);
+  }
+
+  const db = getAdminDb();
+  const { error } = await db
+    .from("pages")
+    .update({ parent_id: parentId, updated_at: nowIso() })
+    .eq("id", pageId);
+  if (error) throw new Error("이동 실패: " + error.message);
 }
 
 export async function createPage(
@@ -182,7 +408,8 @@ export async function updatePage(
   content: string,
   summary: string,
   ratingsEnabled?: boolean,
-  baseRevisionId?: string | null
+  baseRevisionId?: string | null,
+  parentId?: string | null
 ): Promise<{ changed: boolean }> {
   const db = getAdminDb();
 
@@ -207,6 +434,18 @@ export async function updatePage(
   // 평가 허용 플래그는 내용 변경 여부와 무관하게 반영
   const pagePatch: Record<string, unknown> = {};
   if (ratingsEnabled !== undefined) pagePatch.ratings_enabled = ratingsEnabled;
+
+  // 상위 폴더 이동 (undefined = 변경 안 함, null = 최상위로). 순환/자기참조 방지.
+  if (parentId !== undefined) {
+    if (parentId === pageId)
+      throw new AuthError("자기 자신을 상위 폴더로 지정할 수 없습니다.", 400);
+    if (parentId) {
+      const all = await listTree();
+      if (descendantSet(all, pageId).has(parentId))
+        throw new AuthError("하위 문서를 상위 폴더로 지정할 수 없습니다.", 400);
+    }
+    pagePatch.parent_id = parentId;
+  }
 
   // no-op: 제목/본문이 현재와 동일하면 새 리비전을 만들지 않음
   let changed = true;

@@ -6,13 +6,6 @@ import { getPageBySlug, getRevisionForDiff } from "@/lib/pages";
 
 export const dynamic = "force-dynamic";
 
-const wrap: React.CSSProperties = {
-  maxWidth: 820,
-  margin: "32px auto",
-  padding: "0 20px",
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-};
-
 export default async function RevDiffPage({
   params,
 }: {
@@ -31,8 +24,11 @@ export default async function RevDiffPage({
   const parts = diffLines(prev?.content ?? "", cur.content ?? "");
 
   return (
-    <main style={wrap}>
-      <Link href={`/wiki/${slug}/history`} style={{ color: "#666", fontSize: 14 }}>
+    <main className="container page">
+      <Link
+        href={`/wiki/${slug}/history`}
+        style={{ color: "var(--muted)", fontSize: 14 }}
+      >
         ← 이력
       </Link>
       <h1 style={{ marginTop: 8 }}>변경 내역</h1>

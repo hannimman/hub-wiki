@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import "./globals.css";
 import "highlight.js/styles/github.css";
+import SiteHeader from "./SiteHeader";
 
 export const metadata = {
   title: "팀 위키",
@@ -10,7 +11,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <SiteHeader />
+        {children}
+      </body>
     </html>
   );
 }

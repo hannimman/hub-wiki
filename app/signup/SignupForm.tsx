@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import AvatarPicker, { type AvatarValue } from "../AvatarPicker";
+import FaceOnboard, { type FaceValue } from "./FaceOnboard";
+import { DEFAULT_AVATAR_V2 } from "@/lib/avatar/render";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -29,7 +30,7 @@ export default function SignupForm({
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [avatar, setAvatar] = useState<AvatarValue>({ id: "m1", config: null });
+  const [face, setFace] = useState<FaceValue>(DEFAULT_AVATAR_V2.face);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -46,8 +47,8 @@ export default function SignupForm({
           displayName,
           username,
           password,
-          avatar: avatar.id,
-          avatarConfig: avatar.config,
+          avatar: "v2",
+          avatarConfig: { v: 2, face, equipped: {} },
         }),
       });
       const data = await res.json();
@@ -81,8 +82,8 @@ export default function SignupForm({
         </div>
       )}
 
-      <label style={labelStyle}>아바타</label>
-      <AvatarPicker value={avatar} onChange={setAvatar} />
+      <label style={labelStyle}>내 캐릭터 얼굴 만들기</label>
+      <FaceOnboard value={face} onChange={setFace} />
 
       <label style={labelStyle} htmlFor="displayName">
         이름

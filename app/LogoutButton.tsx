@@ -15,17 +15,7 @@ export default function LogoutButton() {
   }
 
   return (
-    <button
-      onClick={logout}
-      disabled={loading}
-      style={{
-        padding: "8px 14px",
-        borderRadius: 8,
-        border: "1px solid #ccc",
-        background: "#fff",
-        cursor: "pointer",
-      }}
-    >
+    <button onClick={logout} disabled={loading} className="btn btn-sm">
       {loading ? "…" : "로그아웃"}
     </button>
   );

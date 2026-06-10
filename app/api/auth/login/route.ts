@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const db = getAdminDb();
     const { data: user } = await db
       .from("users")
-      .select("id, password_hash, is_active")
+      .select("id, password_hash, is_active, needs_password_reset")
       .eq("username", username)
       .maybeSingle();
 
@@ -25,6 +25,13 @@ export async function POST(req: Request) {
     const ok = user ? await verifyPassword(password, user.password_hash) : false;
     if (!user || !ok)
       throw new AuthError("아이디 또는 비밀번호가 올바르지 않습니다.", 401);
+
+    // 비밀번호 초기화 대기 계정은 기존 비번으로 로그인 불가 → 재설정 안내
+    if (user.needs_password_reset)
+      throw new AuthError(
+        "비밀번호가 초기화되었습니다. 아래 '비밀번호 재설정'에서 새 비밀번호를 설정하세요.",
+        403
+      );
 
     // 비번이 맞아도 비활성화 계정은 차단
     if (!user.is_active)

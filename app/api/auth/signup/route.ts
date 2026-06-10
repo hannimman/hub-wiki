@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/db";
 import { hashPassword, createSession, AuthError } from "@/lib/auth";
 import { sanitizeConfig, PRESET_IDS } from "@/lib/avatars";
+import { sanitizeAvatarV2, type AvatarV2Data } from "@/lib/avatar/render";
+import { award, POINTS } from "@/lib/points";
 
 export const dynamic = "force-dynamic";
 
@@ -17,12 +19,19 @@ export async function POST(req: Request) {
     const displayName = String(body.displayName ?? "").trim();
     const username = String(body.username ?? "").trim().toLowerCase();
     const password = String(body.password ?? "");
-    let avatar = String(body.avatar ?? "m1").trim();
-    let avatarConfig: ReturnType<typeof sanitizeConfig> | null = null;
-    if (avatar === "custom") {
+    let avatar = String(body.avatar ?? "v2").trim();
+    let avatarConfig:
+      | ReturnType<typeof sanitizeConfig>
+      | AvatarV2Data
+      | null = null;
+    if (avatar === "v2") {
+      // 가입 시점엔 보유 아이템 0 → equipped 는 전부 null 로 강제(얼굴만 자유)
+      avatarConfig = sanitizeAvatarV2(body.avatarConfig, new Set());
+    } else if (avatar === "custom") {
       avatarConfig = sanitizeConfig(body.avatarConfig);
     } else if (!PRESET_IDS.includes(avatar)) {
-      avatar = "m1";
+      avatar = "v2";
+      avatarConfig = sanitizeAvatarV2(null, new Set());
     }
 
     if (!token) throw new AuthError("초대 토큰이 없습니다.", 400);
@@ -82,6 +91,13 @@ export async function POST(req: Request) {
 
     // 4) 초대에 사용자 기록
     await db.from("invites").update({ used_by: user.id }).eq("id", claimed.id);
+
+    // 4.5) 가입 환영 포인트 (이력에도 기록). 실패해도 가입은 막지 않는다.
+    try {
+      await award(user.id, POINTS.signup, "signup");
+    } catch (e) {
+      console.error("signup bonus failed", e);
+    }
 
     // 5) 세션 발급 (자동 로그인)
     await createSession(user.id);

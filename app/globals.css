@@ -1,7 +1,26 @@
-/* 전역 기본 + 마크다운(.markdown-body) 스타일 */
+/* 전역 기본 + 디자인 토큰 + 공용 레이아웃/헤더 + 마크다운(.markdown-body) 스타일 */
+
+:root {
+  --bg: #ffffff;
+  --fg: #1f2328;
+  --muted: #6b7280;
+  --border: #e4e7eb;
+  --card: #f6f8fa;
+  --card-hover: #eef1f4;
+  --primary: #3b82f6;
+  --primary-hover: #2f6fe0;
+  --primary-fg: #ffffff;
+  --danger: #ef4444;
+  --radius: 10px;
+  --maxw: 980px;
+}
 
 * {
   box-sizing: border-box;
+}
+html {
+  /* 페이지마다 스크롤바가 생겼다 없어질 때 화면이 좌우로 밀리지 않게 공간을 항상 예약 */
+  scrollbar-gutter: stable;
 }
 html,
 body {
@@ -11,11 +30,815 @@ body {
 body {
   font-family: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo",
     "Malgun Gothic", sans-serif;
-  color: #1f2328;
-  background: #fff;
+  color: var(--fg);
+  background: var(--bg);
+  line-height: 1.6;
 }
 a {
-  color: #3b82f6;
+  color: var(--primary);
+}
+
+/* ── 공용 레이아웃 ── */
+.container {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+.page {
+  padding: 28px 0 72px;
+}
+.muted {
+  color: var(--muted);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+/* ── 버튼 ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.btn:hover {
+  background: var(--card);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-fg);
+  border-color: var(--primary);
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+/* ── 공용 헤더 ── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: saturate(180%) blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+.site-header .inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.brand {
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--fg);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav {
+  display: flex;
+  gap: 2px;
+}
+.nav a {
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+.nav a:hover {
+  background: var(--card);
+  color: var(--fg);
+}
+.spacer {
+  flex: 1;
+}
+.hdr-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--fg);
+}
+.hdr-user .uname {
+  font-size: 14px;
+  font-weight: 600;
+}
+.role-badge {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 700;
+}
+.pts-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #b45309;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pts-chip:hover {
+  background: #fef3c7;
+}
+
+@media (max-width: 640px) {
+  .site-header .inner {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 8px 14px;
+    gap: 8px;
+  }
+  .nav {
+    order: 3;
+    width: 100%;
+  }
+  .hdr-user .uname {
+    display: none;
+  }
+}
+
+/* ── 위키 2-pane (탐색기형: 좌측 트리 + 우측 본문) ── */
+.wiki-shell {
+  display: flex;
+  align-items: flex-start;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+.wiki-sidebar {
+  width: 290px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 56px;
+  height: calc(100vh - 56px);
+  overflow: auto;
+  border-right: 1px solid var(--border);
+  background: #fbfcfd;
+}
+.wiki-content {
+  flex: 1;
+  min-width: 0;
+}
+.tw-toolbar {
+  position: sticky;
+  top: 0;
+  background: #fbfcfd;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.tw-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+.tw-tools {
+  display: flex;
+  gap: 3px;
+}
+.tw-tool {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 7px;
+  line-height: 1.2;
+}
+.tw-tool:hover {
+  background: var(--card);
+}
+.tw-ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tw-root {
+  padding: 6px 0;
+}
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 8px 3px 0;
+  font-size: 14px;
+}
+.tree-row:hover {
+  background: var(--card);
+}
+.tree-row:hover .tw-act {
+  opacity: 1;
+}
+.tree-row.active {
+  background: #e8f0fe;
+}
+.tw-chev {
+  width: 16px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  padding: 0;
+}
+.tw-icon {
+  width: 18px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 13px;
+}
+.tw-label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 2px;
+  color: var(--fg);
+  text-decoration: none;
+  font: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-row.active .tw-label {
+  font-weight: 700;
+  color: var(--primary);
+}
+.tw-actions {
+  display: flex;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.tw-act {
+  opacity: 0;
+  transition: opacity 0.12s;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 2px 3px;
+  text-decoration: none;
+  border-radius: 4px;
+}
+.tw-act:hover {
+  background: #fff;
+  color: var(--fg);
+}
+.tw-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 13px;
+  padding: 2px 6px;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+}
+.tree-row[draggable="true"] {
+  cursor: grab;
+}
+.tw-grip {
+  width: 16px;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--muted);
+  cursor: grab;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.5;
+  user-select: none;
+}
+.tw-grip:hover,
+.tree-row:hover .tw-grip {
+  opacity: 1;
+}
+.tw-grip:active {
+  cursor: grabbing;
+}
+.tree-row.dnd-over {
+  outline: 2px dashed var(--primary);
+  outline-offset: -2px;
+  background: #e8f0fe;
+  border-radius: 6px;
+}
+.tw-rootzone {
+  margin: 6px 10px;
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--primary);
+  border: 1px dashed var(--primary);
+  border-radius: 8px;
+  background: #f0f6ff;
+}
+.tw-rootzone.dnd-over {
+  background: #dbeafe;
+  font-weight: 700;
+}
+.tree-row.dnd-dragging {
+  opacity: 0.4;
+}
+.tw-dragchip {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tw-dragchip-to {
+  font-weight: 700;
+}
+.tw-root.dnd-rootover {
+  outline: 2px dashed var(--primary);
+  outline-offset: -3px;
+  border-radius: 8px;
+  background: #f5f9ff;
+}
+@keyframes twFlash {
+  0% {
+    background: #fde68a;
+  }
+  100% {
+    background: transparent;
+  }
+}
+.tree-row.tw-flash {
+  animation: twFlash 1.2s ease-out;
+  border-radius: 6px;
+}
+
+/* ════════ 아바타 v2 — 관절/애니메이션 (가이드 5절) ════════ */
+/* 관절 피벗: transform-origin 을 viewBox 좌표로 지정하려면 transform-box: view-box 필수 */
+.limb {
+  transform-box: view-box;
+}
+.leg-l {
+  transform-origin: 146px 292px;
+}
+.leg-r {
+  transform-origin: 174px 292px;
+}
+.arm-l,
+.arm-l-mid,
+.arm-l-front {
+  transform-origin: 135px 196px;
+}
+.arm-r,
+.arm-r-mid,
+.arm-r-front {
+  transform-origin: 185px 196px;
+}
+.char-inner {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.eyes.blink {
+  transform: scaleY(0.08);
+}
+
+@keyframes avSwingA {
+  0%, 100% { transform: rotate(var(--amp, 13deg)); }
+  50% { transform: rotate(calc(-1 * var(--amp, 13deg))); }
+}
+@keyframes avSwingB {
+  0%, 100% { transform: rotate(calc(-1 * var(--amp, 13deg))); }
+  50% { transform: rotate(var(--amp, 13deg)); }
+}
+@keyframes avBob {
+  0%, 100% { transform: translateY(0) rotate(var(--lean, 0deg)); }
+  50% { transform: translateY(var(--bob, -4px)) rotate(var(--lean, 0deg)); }
+}
+@keyframes avIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes avPop {
+  0% { transform: scale(0.5); }
+  60% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* 무대 idle 둥실거림 */
+.stage-idle .char-inner {
+  animation: avIdle 3.4s ease-in-out infinite;
+}
+
+@keyframes avArmRaiseL {
+  0%, 100% { transform: rotate(15deg); }
+  50% { transform: rotate(135deg); }
+}
+@keyframes avArmRaiseR {
+  0%, 100% { transform: rotate(-15deg); }
+  50% { transform: rotate(-135deg); }
+}
+@keyframes avArmWaveR {
+  0%, 100% { transform: rotate(-115deg); }
+  50% { transform: rotate(-152deg); }
+}
+@keyframes avDanceSway {
+  0%, 100% { transform: translateX(-10px) rotate(-3deg); }
+  50% { transform: translateX(10px) rotate(3deg); }
+}
+@keyframes avHopJump {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  18% { transform: translateY(0) scale(1.07, 0.88); }
+  45% { transform: translateY(-40px) scale(0.96, 1.06); }
+  68% { transform: translateY(0) scale(1.08, 0.9); }
+  84% { transform: translateY(0) scale(0.98, 1.02); }
+}
+.char {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+/* 걷기 — svg(또는 래퍼)에 .av-walk 를 붙이면 착용 상태 그대로 관절 스윙 */
+.av-walk .char-inner {
+  --bob: -3.5px;
+  --lean: 2deg;
+  animation: avBob 0.38s ease-in-out infinite;
+}
+.av-walk .leg-l {
+  --amp: 16deg;
+  animation: avSwingA 0.76s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+.av-walk .leg-r {
+  --amp: 16deg;
+  animation: avSwingB 0.76s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+.av-walk .arm-l,
+.av-walk .arm-l-mid,
+.av-walk .arm-l-front {
+  --amp: 10deg;
+  animation: avSwingB 0.76s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+.av-walk .arm-r,
+.av-walk .arm-r-mid,
+.av-walk .arm-r-front {
+  --amp: 10deg;
+  animation: avSwingA 0.76s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* 달리기 */
+.av-run .char-inner {
+  --bob: -7px;
+  --lean: 6deg;
+  animation: avBob 0.19s ease-in-out infinite;
+}
+.av-run .leg-l { --amp: 27deg; animation: avSwingA 0.38s ease-in-out infinite; }
+.av-run .leg-r { --amp: 27deg; animation: avSwingB 0.38s ease-in-out infinite; }
+.av-run .arm-l,
+.av-run .arm-l-mid,
+.av-run .arm-l-front { --amp: 22deg; animation: avSwingB 0.38s ease-in-out infinite; }
+.av-run .arm-r,
+.av-run .arm-r-mid,
+.av-run .arm-r-front { --amp: 22deg; animation: avSwingA 0.38s ease-in-out infinite; }
+
+/* 춤 */
+.av-dance .char { animation: avDanceSway 1.6s ease-in-out infinite; }
+.av-dance .char-inner { --bob: -4px; animation: avBob 0.4s ease-in-out infinite; }
+.av-dance .leg-l { --amp: 7deg; animation: avSwingA 0.8s ease-in-out infinite; }
+.av-dance .leg-r { --amp: 7deg; animation: avSwingB 0.8s ease-in-out infinite; }
+.av-dance .arm-l,
+.av-dance .arm-l-mid,
+.av-dance .arm-l-front { animation: avArmRaiseL 0.9s ease-in-out infinite; }
+.av-dance .arm-r,
+.av-dance .arm-r-mid,
+.av-dance .arm-r-front { animation: avArmRaiseR 0.9s ease-in-out infinite; animation-delay: -0.45s; }
+
+/* 인사 (오른팔 흔들기) */
+.av-wave .char-inner { --bob: -2px; animation: avBob 1.4s ease-in-out infinite; }
+.av-wave .arm-r,
+.av-wave .arm-r-mid,
+.av-wave .arm-r-front { animation: avArmWaveR 0.7s ease-in-out infinite; }
+
+/* 점프 */
+.av-hop .char { animation: avHopJump 1s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+.av-hop .leg-l { --amp: 5deg; animation: avSwingA 0.5s ease-in-out infinite; }
+.av-hop .leg-r { --amp: 5deg; animation: avSwingB 0.5s ease-in-out infinite; }
+.av-hop .arm-l,
+.av-hop .arm-l-mid,
+.av-hop .arm-l-front { --amp: 18deg; animation: avSwingA 0.5s ease-in-out infinite; }
+.av-hop .arm-r,
+.av-hop .arm-r-mid,
+.av-hop .arm-r-front { --amp: 18deg; animation: avSwingA 0.5s ease-in-out infinite; }
+
+/* ════════ 아바타 상점 ════════ */
+.shop-wrap {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.shop-stage {
+  position: sticky;
+  top: 76px;
+  flex-shrink: 0;
+  width: 290px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  background: #fff;
+  text-align: center;
+}
+.shop-stage svg {
+  border-radius: 10px;
+  overflow: hidden;
+}
+.shop-stage-points {
+  font-weight: 800;
+  font-size: 15px;
+  color: #b45309;
+  margin-bottom: 8px;
+}
+.shop-stage-preview-note {
+  margin-top: 10px;
+  font-size: 12.5px;
+  background: #eff6ff;
+  border: 1px dashed var(--primary);
+  border-radius: 8px;
+  padding: 8px;
+}
+.shop-panel {
+  flex: 1;
+  min-width: 0;
+}
+.shop-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.shop-tab {
+  border: none;
+  background: none;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.shop-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+.shop-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.shop-chip {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.shop-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}
+.shop-section-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin: 14px 0 8px;
+}
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  gap: 10px;
+}
+.shop-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: box-shadow 0.12s, border-color 0.12s;
+}
+.shop-card:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+.shop-card.selected,
+.shop-card.equipped {
+  border-color: var(--primary);
+  background: #f6faff;
+}
+.shop-card.previewing {
+  border: 2px dashed var(--primary);
+}
+.shop-card-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin: 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shop-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  z-index: 1;
+}
+.shop-badge.own {
+  background: #16a34a;
+}
+.shop-badge.try {
+  background: #f59e0b;
+}
+.shop-act {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.shop-act.buy {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+.shop-act.buy.cant {
+  opacity: 0.45;
+}
+.shop-act.free {
+  color: var(--primary);
+}
+.shop-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  background: #1f2328;
+  color: #fff;
+  font-size: 13.5px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  z-index: 200;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .shop-wrap {
+    flex-direction: column;
+  }
+  .shop-stage {
+    position: static;
+    width: 100%;
+  }
+}
+
+/* ── 모달 ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 70vh;
+  overflow: auto;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+}
+
+/* ════════ 팀 광장 (위키 루트 — 아바타 산책) ════════ */
+.plaza {
+  position: relative;
+  height: 150px;
+  margin: 14px 0 22px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(#eaf3fd 0%, #f4f9ff 70%, #e6ecdf 70%, #dfe6d4 100%);
+}
+.plaza-char {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  width: 84px;
+  text-align: center;
+  will-change: left;
+}
+.plaza-char svg {
+  display: block;
+  margin-bottom: -22px; /* 이름표를 발 밑에 붙이기 */
+  overflow: visible; /* 점프 시 모자가 viewBox 위로 나가도 잘리지 않게 */
+}
+.plaza-name {
+  position: relative;
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #475569;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+@media (max-width: 820px) {
+  .wiki-shell {
+    flex-direction: column;
+  }
+  .wiki-sidebar {
+    width: 100%;
+    position: static;
+    height: auto;
+    max-height: 46vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .tw-act {
+    opacity: 1;
+  }
 }
 
 /* ── 마크다운 본문 ── */

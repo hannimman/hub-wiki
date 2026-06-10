@@ -99,6 +99,27 @@ export default function AdminControls({
     }
   }
 
+  async function resetPassword(id: string, name: string) {
+    if (
+      !confirm(
+        `${name} 님의 비밀번호를 초기화할까요?\n이 사용자는 즉시 로그아웃되며, 로그인 화면의 '비밀번호 재설정'에서 아이디 입력 후 새 비밀번호를 설정해야 합니다.`
+      )
+    )
+      return;
+    const res = await fetch(`/api/admin/users/${id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reset_password: true }),
+    });
+    if (res.ok) {
+      alert("비밀번호를 초기화했습니다.");
+      router.refresh();
+    } else {
+      const d = await res.json().catch(() => ({}));
+      alert(d.error ?? "실패");
+    }
+  }
+
   const inputStyle: React.CSSProperties = {
     padding: "8px 10px",
     borderRadius: 8,
@@ -225,6 +246,8 @@ export default function AdminControls({
           <tbody>
             {users.map((u) => {
               const isMe = u.id === meId;
+              // 대상이 슈퍼유저면 슈퍼만 관리 가능 (관리자는 비활성화·초기화 불가)
+              const canManage = isSuper || u.role !== "super";
               return (
                 <tr key={u.id}>
                   <td style={td}>
@@ -238,23 +261,64 @@ export default function AdminControls({
                       </div>
                     </div>
                   </td>
-                  <td style={td}>{ROLE_LABEL[u.role]}</td>
                   <td style={td}>
-                    {u.is_active ? (
-                      <button
-                        onClick={() => toggleActive(u.id, false)}
-                        disabled={isMe}
-                        style={{ ...inputStyle, cursor: isMe ? "default" : "pointer", color: "#c62828" }}
+                    {ROLE_LABEL[u.role]}
+                    {u.needs_password_reset && (
+                      <span
+                        style={{
+                          marginLeft: 6,
+                          fontSize: 11,
+                          padding: "1px 6px",
+                          borderRadius: 999,
+                          background: "#fff7ed",
+                          color: "#c2410c",
+                          whiteSpace: "nowrap",
+                        }}
                       >
-                        비활성화
-                      </button>
+                        초기화 대기
+                      </span>
+                    )}
+                  </td>
+                  <td style={td}>
+                    {!canManage ? (
+                      <span style={{ color: "#999", fontSize: 12 }}>
+                        관리 불가
+                      </span>
                     ) : (
-                      <button
-                        onClick={() => toggleActive(u.id, true)}
-                        style={{ ...inputStyle, cursor: "pointer", color: "#22863a" }}
-                      >
-                        활성화
-                      </button>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {u.is_active ? (
+                          <button
+                            onClick={() => toggleActive(u.id, false)}
+                            disabled={isMe}
+                            style={{
+                              ...inputStyle,
+                              cursor: isMe ? "default" : "pointer",
+                              color: "#c62828",
+                            }}
+                          >
+                            비활성화
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => toggleActive(u.id, true)}
+                            style={{
+                              ...inputStyle,
+                              cursor: "pointer",
+                              color: "#22863a",
+                            }}
+                          >
+                            활성화
+                          </button>
+                        )}
+                        {!isMe && !u.needs_password_reset && (
+                          <button
+                            onClick={() => resetPassword(u.id, u.display_name)}
+                            style={{ ...inputStyle, cursor: "pointer" }}
+                          >
+                            비밀번호 초기화
+                          </button>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>

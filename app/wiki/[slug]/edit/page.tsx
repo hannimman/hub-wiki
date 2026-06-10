@@ -1,17 +1,10 @@
 import { redirect, notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { getPageBySlug } from "@/lib/pages";
+import { getPageBySlug, listParentOptions } from "@/lib/pages";
 import { getRatingsEnabled } from "@/lib/ratings";
 import PageEditor from "../../PageEditor";
 
 export const dynamic = "force-dynamic";
-
-const wrap: React.CSSProperties = {
-  maxWidth: 820,
-  margin: "32px auto",
-  padding: "0 20px",
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-};
 
 export default async function EditPage({
   params,
@@ -25,9 +18,11 @@ export default async function EditPage({
   const page = await getPageBySlug(slug);
   if (!page) notFound();
   const ratingsAllowed = await getRatingsEnabled();
+  // 자기 자신과 하위 문서는 상위 폴더 후보에서 제외(순환 방지)
+  const parentOptions = await listParentOptions(page.id);
 
   return (
-    <main style={wrap}>
+    <main className="container page">
       <h1 style={{ marginBottom: 16 }}>문서 수정</h1>
       <PageEditor
         mode="edit"
@@ -37,6 +32,8 @@ export default async function EditPage({
         initialContent={page.content}
         ratingsAllowed={ratingsAllowed}
         initialRatingsEnabled={page.ratings_enabled}
+        parentOptions={parentOptions}
+        initialParentId={page.parent_id}
       />
     </main>
   );

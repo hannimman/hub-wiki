@@ -6,13 +6,6 @@ import { Avatar } from "@/lib/avatars";
 
 export const dynamic = "force-dynamic";
 
-const wrap: React.CSSProperties = {
-  maxWidth: 820,
-  margin: "32px auto",
-  padding: "0 20px",
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-};
-
 export default async function RecentChangesPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -20,7 +13,7 @@ export default async function RecentChangesPage() {
   const changes = await listRecentChanges();
 
   return (
-    <main style={wrap}>
+    <main className="container page">
       <Link href="/wiki" style={{ color: "#666", fontSize: 14 }}>
         ← 위키 목록
       </Link>

@@ -4,13 +4,6 @@ import SignupForm from "./SignupForm";
 
 export const dynamic = "force-dynamic";
 
-const wrap: React.CSSProperties = {
-  maxWidth: 440,
-  margin: "48px auto",
-  padding: "0 20px",
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-};
-
 export default async function SignupPage({
   searchParams,
 }: {
@@ -37,11 +30,14 @@ export default async function SignupPage({
   }
 
   return (
-    <main style={wrap}>
+    <main
+      className="page"
+      style={{ maxWidth: 440, margin: "0 auto", padding: "24px 20px 72px" }}
+    >
       <h1>가입하기</h1>
       {invalid ? (
         <div>
-          <p style={{ color: "#c62828" }}>{invalid}</p>
+          <p style={{ color: "var(--danger)" }}>{invalid}</p>
           <p>
             계정이 있으신가요? <Link href="/login">로그인</Link>
           </p>

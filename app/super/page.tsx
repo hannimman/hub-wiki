@@ -7,13 +7,6 @@ import SuperControls from "./SuperControls";
 
 export const dynamic = "force-dynamic";
 
-const wrap: React.CSSProperties = {
-  maxWidth: 900,
-  margin: "32px auto",
-  padding: "0 20px",
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-};
-
 export default async function SuperPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -23,10 +16,7 @@ export default async function SuperPage() {
   const users = await listUsers();
 
   return (
-    <main style={wrap}>
-      <Link href="/" style={{ color: "#666", fontSize: 14 }}>
-        ← 홈
-      </Link>
+    <main className="container page">
       <h1>🦸 슈퍼 제어판</h1>
       <p style={{ margin: "0 0 16px" }}>
         <Link

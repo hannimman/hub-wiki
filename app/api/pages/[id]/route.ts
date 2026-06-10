@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireUser, AuthError } from "@/lib/auth";
-import { getPageId, updatePage, softDeletePage } from "@/lib/pages";
+import {
+  getPageId,
+  updatePage,
+  softDeletePage,
+  hasChildren,
+} from "@/lib/pages";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +31,13 @@ export async function PATCH(
     const baseRevisionId = body.baseRevisionId
       ? String(body.baseRevisionId)
       : null;
+    // parentId: 키 자체가 없으면 undefined(이동 안 함), 있으면 string 또는 null(최상위)
+    const parentId =
+      body.parentId === undefined
+        ? undefined
+        : body.parentId
+        ? String(body.parentId)
+        : null;
     if (title.length < 1 || title.length > 200)
       throw new AuthError("제목은 1~200자여야 합니다.", 400);
     if (content.length > 200000)
@@ -38,7 +50,8 @@ export async function PATCH(
       content,
       summary,
       ratingsEnabled,
-      baseRevisionId
+      baseRevisionId,
+      parentId
     );
     return NextResponse.json({ ok: true, slug: page.slug, changed: result.changed });
   } catch (e) {
@@ -60,6 +73,13 @@ export async function DELETE(
 
     const page = await getPageId(id);
     if (!page) throw new AuthError("문서를 찾을 수 없습니다.", 404);
+
+    // 하위 문서가 있는 폴더는 삭제 차단 (먼저 옮기거나 삭제하도록)
+    if (await hasChildren(id))
+      throw new AuthError(
+        "하위 문서가 있어 삭제할 수 없습니다. 먼저 하위 문서를 옮기거나 삭제하세요.",
+        400
+      );
 
     await softDeletePage(user.id, id);
     return NextResponse.json({ ok: true });

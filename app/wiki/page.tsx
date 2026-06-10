@@ -1,18 +1,31 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { listPages } from "@/lib/pages";
+import { listPages, listRecentChanges } from "@/lib/pages";
+import { listUsers } from "@/lib/admin";
+import { Avatar } from "@/lib/avatars";
+import {
+  isV2,
+  DEFAULT_AVATAR_V2,
+  type AvatarV2Data,
+} from "@/lib/avatar/render";
+import WikiPlaza, { type PlazaMember } from "./WikiPlaza";
 
 export const dynamic = "force-dynamic";
 
 const wrap: React.CSSProperties = {
-  maxWidth: 820,
-  margin: "32px auto",
-  padding: "0 20px",
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+  padding: "28px 28px 72px",
+  maxWidth: 860,
+};
+const searchInput: React.CSSProperties = {
+  width: "100%",
+  padding: "10px 12px",
+  borderRadius: 8,
+  border: "1px solid var(--border)",
+  fontSize: 15,
 };
 
-export default async function WikiListPage({
+export default async function WikiHome({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
@@ -21,80 +34,112 @@ export default async function WikiListPage({
   if (!user) redirect("/login");
 
   const { q } = await searchParams;
-  const pages = await listPages(q);
+  const searching = !!q?.trim();
+  const results = searching ? await listPages(q) : [];
+  const recent = searching ? [] : await listRecentChanges();
+
+  // 팀 광장: 활성 멤버 전원 (v2 아바타 아니면 기본 모습으로 산책)
+  const members: PlazaMember[] = searching
+    ? []
+    : (await listUsers())
+        .filter((u) => u.is_active)
+        .map((u) => ({
+          id: u.id,
+          name: u.display_name,
+          data: isV2(u.avatar_config)
+            ? (u.avatar_config as AvatarV2Data)
+            : DEFAULT_AVATAR_V2,
+        }));
 
   return (
     <main style={wrap}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h1>📚 위키 문서</h1>
-        <Link
-          href="/wiki/new"
-          style={{
-            padding: "8px 16px",
-            borderRadius: 8,
-            background: "#3b82f6",
-            color: "#fff",
-            textDecoration: "none",
-            fontWeight: 600,
-          }}
-        >
-          + 새 문서
-        </Link>
-      </div>
+      <h1 style={{ marginTop: 0 }}>📚 위키</h1>
+      <p className="muted" style={{ marginTop: 0 }}>
+        왼쪽 트리에서 폴더와 문서를 탐색하세요. 폴더는 클릭하면 펼쳐집니다.
+      </p>
+
+      {!searching && <WikiPlaza members={members} />}
 
       <form action="/wiki" method="get" style={{ margin: "16px 0" }}>
         <input
           name="q"
           defaultValue={q ?? ""}
           placeholder="제목·본문 검색…"
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            fontSize: 15,
-            boxSizing: "border-box",
-          }}
+          style={searchInput}
         />
       </form>
 
-      <div style={{ marginBottom: 12 }}>
-        <Link href="/wiki/changes" style={{ color: "#3b82f6", fontSize: 14 }}>
-          🕒 최근 변경 보기
-        </Link>
-      </div>
-
-      {pages.length === 0 ? (
-        <p style={{ color: "#888" }}>
-          {q
-            ? "검색 결과가 없습니다."
-            : "아직 문서가 없습니다. 첫 문서를 만들어보세요!"}
-        </p>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {pages.map((p) => (
-            <li
-              key={p.id}
-              style={{ padding: "12px 0", borderBottom: "1px solid #eee" }}
-            >
-              <Link
-                href={`/wiki/${p.slug}`}
-                style={{ fontSize: 17, fontWeight: 600, textDecoration: "none" }}
+      {searching ? (
+        results.length === 0 ? (
+          <p className="muted">검색 결과가 없습니다.</p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {results.map((p) => (
+              <li
+                key={p.id}
+                style={{
+                  padding: "12px 0",
+                  borderBottom: "1px solid var(--border)",
+                }}
               >
-                {p.title}
-              </Link>
-              <div style={{ color: "#999", fontSize: 12 }}>
-                {new Date(p.updated_at).toLocaleString("ko-KR")}
-              </div>
-            </li>
-          ))}
-        </ul>
+                <Link
+                  href={`/wiki/${p.slug}`}
+                  style={{
+                    fontSize: 17,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  {p.title}
+                </Link>
+                <div className="muted" style={{ fontSize: 12 }}>
+                  {new Date(p.updated_at).toLocaleString("ko-KR")}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : (
+        <>
+          <h2 style={{ fontSize: 18 }}>🕒 최근 변경</h2>
+          {recent.length === 0 ? (
+            <p className="muted">아직 변경 내역이 없습니다. 첫 문서를 만들어보세요!</p>
+          ) : (
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {recent.map((c) => (
+                <li
+                  key={c.revision_id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "10px 0",
+                    borderBottom: "1px solid var(--border)",
+                  }}
+                >
+                  <Avatar
+                    id={c.author_avatar ?? "m1"}
+                    config={c.author_config}
+                    size={30}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Link
+                      href={`/wiki/${c.slug}`}
+                      style={{ fontWeight: 600, textDecoration: "none" }}
+                    >
+                      {c.page_title}
+                    </Link>
+                    <div className="muted" style={{ fontSize: 12 }}>
+                      {c.author_name ?? "알 수 없음"} ·{" "}
+                      {new Date(c.created_at).toLocaleString("ko-KR")}
+                      {c.summary ? ` · ${c.summary}` : ""}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </main>
   );

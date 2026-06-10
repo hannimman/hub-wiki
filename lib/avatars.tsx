@@ -1,4 +1,9 @@
-import type { ReactNode } from "react";
+import {
+  isV2,
+  AvatarBustV2,
+  DEFAULT_AVATAR_V2,
+  type AvatarV2Data,
+} from "./avatar/render";
 
 // 파라미터 기반 아바타.
 //  * 기본 8종은 PRESETS(고정 설정)로 제공.
@@ -79,109 +84,6 @@ export const PRESETS: { id: string; label: string; config: AvatarConfig }[] = [
 // 하위호환 별칭 (기존 avatars-preview 등에서 사용)
 export const AVATARS = PRESETS;
 
-function hairShape(style: HairStyle, color: string): ReactNode {
-  switch (style) {
-    case "bald":
-      return null;
-    case "buzz":
-      return <path d="M30 47 Q30 28 50 28 Q70 28 70 47 Q62 40 50 39 Q38 40 30 47 Z" fill={color} />;
-    case "long":
-      return (
-        <>
-          <path d="M27 50 Q24 74 31 84 L37 82 Q31 64 34 50 Z" fill={color} />
-          <path d="M73 50 Q76 74 69 84 L63 82 Q69 64 66 50 Z" fill={color} />
-          <path d="M28 50 Q28 25 50 25 Q72 25 72 50 Q66 38 50 37 Q34 38 28 50 Z" fill={color} />
-        </>
-      );
-    case "bun":
-      return (
-        <>
-          <circle cx="50" cy="22" r="7.5" fill={color} />
-          <path d="M29 49 Q29 27 50 27 Q71 27 71 49 Q64 38 50 37 Q36 38 29 49 Z" fill={color} />
-        </>
-      );
-    case "ponytail":
-      return (
-        <>
-          <path d="M70 42 Q84 50 80 70 Q75 58 67 52 Z" fill={color} />
-          <path d="M28 49 Q28 26 50 26 Q72 26 72 49 Q66 38 50 37 Q34 38 28 49 Z" fill={color} />
-        </>
-      );
-    case "wavy":
-      return (
-        <>
-          <path d="M26 48 Q22 60 28 66 Q24 74 32 82 L38 80 Q32 66 35 50 Z" fill={color} />
-          <path d="M74 48 Q78 60 72 66 Q76 74 68 82 L62 80 Q68 66 65 50 Z" fill={color} />
-          <path d="M28 50 Q28 24 50 24 Q72 24 72 50 Q66 37 50 36 Q34 37 28 50 Z" fill={color} />
-        </>
-      );
-    case "short":
-    default:
-      return <path d="M29 48 Q29 26 50 26 Q71 26 71 48 Q64 37 50 36 Q36 37 29 48 Z" fill={color} />;
-  }
-}
-
-function accessoryShape(acc: Accessory, hairColor: string): ReactNode {
-  switch (acc) {
-    case "glasses":
-      return (
-        <g stroke="#333" strokeWidth="2" fill="none">
-          <circle cx="42.5" cy="48" r="6.5" />
-          <circle cx="57.5" cy="48" r="6.5" />
-          <path d="M49 48 H51" />
-          <path d="M36 47 L31 45" />
-          <path d="M64 47 L69 45" />
-        </g>
-      );
-    case "sunglasses":
-      return (
-        <g>
-          <circle cx="42.5" cy="48" r="6.5" fill="#222" />
-          <circle cx="57.5" cy="48" r="6.5" fill="#222" />
-          <path d="M49 48 H51" stroke="#222" strokeWidth="2" />
-          <path d="M36 47 L31 45" stroke="#222" strokeWidth="2" />
-          <path d="M64 47 L69 45" stroke="#222" strokeWidth="2" />
-        </g>
-      );
-    case "beard":
-      return (
-        <path
-          d="M30 52 Q32 70 50 71 Q68 70 70 52 Q64 62 50 61 Q36 62 30 52 Z"
-          fill={hairColor}
-        />
-      );
-    case "none":
-    default:
-      return null;
-  }
-}
-
-function renderBody(c: AvatarConfig): ReactNode {
-  return (
-    <>
-      {/* 어깨/상의 */}
-      <path d="M16 100 Q16 74 50 74 Q84 74 84 100 Z" fill={c.shirt} />
-      {/* 귀 */}
-      <circle cx="27" cy="50" r="4.5" fill={c.skin} />
-      <circle cx="73" cy="50" r="4.5" fill={c.skin} />
-      {/* 머리통 */}
-      <circle cx="50" cy="48" r="22" fill={c.skin} />
-      {/* 눈 */}
-      <circle cx="42.5" cy="48" r="2.6" fill="#3a3a3a" />
-      <circle cx="57.5" cy="48" r="2.6" fill="#3a3a3a" />
-      {/* 볼터치 */}
-      <circle cx="38" cy="54" r="3" fill="#ff9eb0" opacity="0.5" />
-      <circle cx="62" cy="54" r="3" fill="#ff9eb0" opacity="0.5" />
-      {/* 미소 */}
-      <path d="M44 57 Q50 62 56 57" stroke="#c0705a" strokeWidth="2.2" fill="none" strokeLinecap="round" />
-      {/* 머리 */}
-      {hairShape(c.style, c.hair)}
-      {/* 악세서리 */}
-      {accessoryShape(c.accessory, c.hair)}
-    </>
-  );
-}
-
 export function presetConfigById(id?: string | null): AvatarConfig | null {
   return PRESETS.find((p) => p.id === id)?.config ?? null;
 }
@@ -203,15 +105,14 @@ export function Avatar({
   size = 96,
 }: {
   id?: string | null;
-  config?: Partial<AvatarConfig> | null;
+  config?: Partial<AvatarConfig> | AvatarV2Data | null;
   size?: number;
 }) {
-  const c = resolveConfig(id, config);
+  // v2(레이어드 전신 아바타) 얼굴 크롭 흉상 — 동그라미 형태 유지.
+  // 레거시 데이터(프리셋/구 커스텀)는 더 이상 그리지 않고 v2 기본 모습으로 표시
+  // (상점에서 한 번 저장하면 본인 v2 데이터로 바뀜).
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label="아바타">
-      <circle cx="50" cy="50" r="50" fill={c.bg} />
-      {renderBody(c)}
-    </svg>
+    <AvatarBustV2 data={isV2(config) ? config : DEFAULT_AVATAR_V2} size={size} />
   );
 }
 
