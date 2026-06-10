@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>파츠 상점 — 캐릭터 꾸미기</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app">
+
+  <section class="stage-card">
+    <header class="stage-header">
+      <h1>🧸 파츠 상점</h1>
+      <div class="coin-box" id="coin-box" title="보유 코인">
+        <svg viewBox="0 0 24 24" class="coin-icon" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" fill="#ffd24d" stroke="#e0a92e" stroke-width="2"/>
+          <text x="12" y="16.5" text-anchor="middle" font-size="12" font-weight="800" fill="#b27c12">C</text>
+        </svg>
+        <span id="coin-amount">0</span>
+      </div>
+    </header>
+
+    <div class="stage" id="stage">
+      <svg id="stage-svg" viewBox="0 0 320 400" aria-label="내 캐릭터"></svg>
+    </div>
+
+    <p class="hint">💡 캐릭터를 클릭하면 코인 +10! 10% 확률로 행운 보너스 <b>+100</b>이 터져요.</p>
+    <div class="action-bar" id="action-bar">
+      <button class="act-btn" data-action="walk">🚶 걷기</button>
+      <button class="act-btn" data-action="run">🏃 달리기</button>
+      <button class="act-btn" data-action="dance">💃 춤</button>
+      <button class="act-btn" data-action="wave">👋 인사</button>
+      <button class="act-btn" data-action="hop">🦘 점프</button>
+      <button class="act-btn loop-btn" data-action="__loop">🔁 연속 재생</button>
+    </div>
+    <button id="reset-btn" class="reset-btn">↺ 처음부터 다시 하기</button>
+  </section>
+
+  <section class="panel">
+    <nav class="tabs">
+      <button class="tab active" data-tab="face">😊 얼굴</button>
+      <button class="tab" data-tab="shop">🛒 상점</button>
+      <button class="tab" data-tab="inventory">🎒 인벤토리</button>
+    </nav>
+    <div id="panel-body" class="panel-body"></div>
+  </section>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/data/face.js"></script>
+<script src="js/data/items.js"></script>
+<script src="js/state.js"></script>
+<script src="js/character.js"></script>
+<script src="js/shop.js"></script>
+<script src="js/interactive.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
