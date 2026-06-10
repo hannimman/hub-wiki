@@ -14,6 +14,7 @@ export async function POST(req: Request) {
     const title = String(body.title ?? "").trim();
     const content = String(body.content ?? "");
     const summary = String(body.summary ?? "").trim().slice(0, 200);
+    const ratingsEnabled = !!body.ratingsEnabled;
     const parentId = body.parentId ? String(body.parentId) : null;
 
     if (title.length < 1 || title.length > 200)
@@ -21,7 +22,14 @@ export async function POST(req: Request) {
     if (content.length > 200000)
       throw new AuthError("본문이 너무 깁니다.", 400);
 
-    const slug = await createPage(user.id, title, content, summary, parentId);
+    const slug = await createPage(
+      user.id,
+      title,
+      content,
+      summary,
+      ratingsEnabled,
+      parentId
+    );
     return NextResponse.json({ ok: true, slug });
   } catch (e) {
     if (e instanceof AuthError)

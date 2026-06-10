@@ -21,6 +21,8 @@ export async function PATCH(
     const title = String(body.title ?? "").trim();
     const content = String(body.content ?? "");
     const summary = String(body.summary ?? "").trim().slice(0, 200);
+    const ratingsEnabled =
+      typeof body.ratingsEnabled === "boolean" ? body.ratingsEnabled : undefined;
     const baseRevisionId = body.baseRevisionId
       ? String(body.baseRevisionId)
       : null;
@@ -35,6 +37,7 @@ export async function PATCH(
       title,
       content,
       summary,
+      ratingsEnabled,
       baseRevisionId
     );
     return NextResponse.json({ ok: true, slug: page.slug, changed: result.changed });

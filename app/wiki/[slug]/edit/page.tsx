@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getPageBySlug } from "@/lib/pages";
+import { getRatingsEnabled } from "@/lib/ratings";
 import PageEditor from "../../PageEditor";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,7 @@ export default async function EditPage({
   const { slug } = await params;
   const page = await getPageBySlug(slug);
   if (!page) notFound();
+  const ratingsAllowed = await getRatingsEnabled();
 
   return (
     <main style={wrap}>
@@ -33,6 +35,8 @@ export default async function EditPage({
         baseRevisionId={page.current_revision_id}
         initialTitle={page.title}
         initialContent={page.content}
+        ratingsAllowed={ratingsAllowed}
+        initialRatingsEnabled={page.ratings_enabled}
       />
     </main>
   );

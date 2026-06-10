@@ -2,8 +2,16 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getPageBySlug, getTitleSlugMap } from "@/lib/pages";
+import {
+  getRatingsEnabled,
+  getMyRating,
+  getAggregate,
+  canUserRate,
+  canUserViewScores,
+} from "@/lib/ratings";
 import MarkdownView from "@/lib/markdown";
 import PageActions from "./PageActions";
+import RatingWidget from "./RatingWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +36,31 @@ export default async function PageView({
   if (!page) notFound();
   const linkMap = await getTitleSlugMap();
 
+  // 평가 데이터 (점수 제도가 켜져 있을 때만)
+  const ratingsEnabled = await getRatingsEnabled();
+  let rating: {
+    pageId: string;
+    isAuthor: boolean;
+    myScore: number | null;
+    canRate: boolean;
+    canView: boolean;
+    avg: number | null;
+    count: number | null;
+  } | null = null;
+  if (ratingsEnabled && page.ratings_enabled) {
+    const canView = canUserViewScores(user);
+    const agg = canView ? await getAggregate(page.id) : null;
+    rating = {
+      pageId: page.id,
+      isAuthor: page.created_by === user.id,
+      myScore: await getMyRating(user.id, page.id),
+      canRate: canUserRate(user),
+      canView,
+      avg: agg ? agg.avg : null,
+      count: agg ? agg.count : null,
+    };
+  }
+
   return (
     <main style={wrap}>
       <div
@@ -50,6 +83,8 @@ export default async function PageView({
       </div>
 
       <MarkdownView content={page.content} linkMap={linkMap} />
+
+      {rating && <RatingWidget {...rating} />}
     </main>
   );
 }

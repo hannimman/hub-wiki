@@ -15,7 +15,7 @@ const ALG = "HS256";
 const SESSION_DAYS = 7;
 const BCRYPT_ROUNDS = 10;
 
-export type Role = "admin" | "member";
+export type Role = "super" | "admin" | "member";
 
 export type SessionUser = {
   id: string;
@@ -25,6 +25,8 @@ export type SessionUser = {
   avatar: string;
   avatar_config: AvatarConfig | null;
   is_active: boolean;
+  can_rate: boolean;
+  can_view_scores: boolean;
 };
 
 export class AuthError extends Error {
@@ -97,7 +99,9 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   const db = getAdminDb();
   const { data, error } = await db
     .from("users")
-    .select("id, username, display_name, role, avatar, avatar_config, is_active")
+    .select(
+      "id, username, display_name, role, avatar, avatar_config, is_active, can_rate, can_view_scores"
+    )
     .eq("id", uid)
     .maybeSingle();
 
@@ -113,10 +117,20 @@ export async function requireUser(): Promise<SessionUser> {
 }
 
 // 관리자 전용 가드
+// 관리자 이상(super 포함) 가드
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await requireUser();
-  if (user.role !== "admin") {
+  if (user.role !== "admin" && user.role !== "super") {
     throw new AuthError("관리자 권한이 필요합니다.", 403);
+  }
+  return user;
+}
+
+// 슈퍼유저 전용 가드
+export async function requireSuper(): Promise<SessionUser> {
+  const user = await requireUser();
+  if (user.role !== "super") {
+    throw new AuthError("슈퍼유저 권한이 필요합니다.", 403);
   }
   return user;
 }

@@ -60,6 +60,46 @@ function MermaidDiagram({ chart }: { chart: string }) {
   return <div ref={ref} style={{ textAlign: "center", margin: "16px 0" }} />;
 }
 
+// 코드블록 + 복사 버튼 (mermaid 제외)
+function CodeBlock({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLPreElement>(null);
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    const text = ref.current?.innerText ?? "";
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard 미지원 무시 */
+    }
+  }
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={copy}
+        style={{
+          position: "absolute",
+          top: 6,
+          right: 6,
+          fontSize: 12,
+          padding: "3px 9px",
+          borderRadius: 6,
+          border: "1px solid #d0d7de",
+          background: "#fff",
+          color: "#444",
+          cursor: "pointer",
+          opacity: 0.9,
+        }}
+      >
+        {copied ? "복사됨 ✓" : "복사"}
+      </button>
+      <pre ref={ref}>{children}</pre>
+    </div>
+  );
+}
+
 // [[문서제목]] → 내부 링크로 변환.
 //  * linkMap 에 있으면 해당 slug 로(파란 링크), 없으면 새 문서 작성 링크로(빨간 링크).
 function preprocessWikiLinks(md: string, linkMap?: Record<string, string>): string {
@@ -99,6 +139,16 @@ export default function MarkdownView({
           ],
         ]}
         components={{
+          pre(props) {
+            const child = props.children as
+              | { type?: unknown; props?: { className?: string } }
+              | undefined;
+            const cls = child?.props?.className ?? "";
+            const isCodeBlock = child?.type === "code" || cls.includes("language-");
+            // mermaid 다이어그램 등은 복사버튼 래퍼 없이 그대로
+            if (!isCodeBlock) return <>{props.children}</>;
+            return <CodeBlock>{props.children}</CodeBlock>;
+          },
           code(props) {
             const { className, children } = props;
             const match = /language-(\w+)/.exec(className || "");

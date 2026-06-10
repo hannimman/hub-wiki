@@ -50,6 +50,20 @@ export default async function HomePage() {
           >
             마이페이지
           </Link>
+          {(user.role === "super" || user.role === "admin") && (
+            <Link
+              href={user.role === "super" ? "/super" : "/admin"}
+              style={{
+                padding: "8px 14px",
+                borderRadius: 8,
+                border: "1px solid #ccc",
+                textDecoration: "none",
+                color: "#333",
+              }}
+            >
+              {user.role === "super" ? "🦸 슈퍼" : "🛡️ 관리자"}
+            </Link>
+          )}
           <LogoutButton />
         </div>
       ) : (

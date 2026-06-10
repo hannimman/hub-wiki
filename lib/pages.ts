@@ -22,6 +22,7 @@ export type PageDetail = {
   created_by: string | null;
   updated_at: string;
   content: string;
+  ratings_enabled: boolean;
 };
 
 export type RevisionItem = {
@@ -78,7 +79,7 @@ export async function getPageBySlug(slug: string): Promise<PageDetail | null> {
   const { data: page } = await db
     .from("pages")
     .select(
-      "id, slug, title, parent_id, current_revision_id, created_by, is_deleted, updated_at"
+      "id, slug, title, parent_id, current_revision_id, created_by, is_deleted, updated_at, ratings_enabled"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -104,6 +105,7 @@ export async function getPageBySlug(slug: string): Promise<PageDetail | null> {
     created_by: page.created_by,
     updated_at: page.updated_at,
     content,
+    ratings_enabled: page.ratings_enabled ?? false,
   };
 }
 
@@ -136,6 +138,7 @@ export async function createPage(
   title: string,
   content: string,
   summary: string,
+  ratingsEnabled: boolean,
   parentId?: string | null
 ): Promise<string> {
   const db = getAdminDb();
@@ -143,7 +146,13 @@ export async function createPage(
 
   const { data: page, error } = await db
     .from("pages")
-    .insert({ slug, title, parent_id: parentId ?? null, created_by: authorId })
+    .insert({
+      slug,
+      title,
+      parent_id: parentId ?? null,
+      created_by: authorId,
+      ratings_enabled: ratingsEnabled,
+    })
     .select("id, slug")
     .single();
   if (error || !page) throw new Error("문서 생성 실패: " + (error?.message ?? ""));
@@ -172,6 +181,7 @@ export async function updatePage(
   title: string,
   content: string,
   summary: string,
+  ratingsEnabled?: boolean,
   baseRevisionId?: string | null
 ): Promise<{ changed: boolean }> {
   const db = getAdminDb();
@@ -194,30 +204,38 @@ export async function updatePage(
     );
   }
 
+  // 평가 허용 플래그는 내용 변경 여부와 무관하게 반영
+  const pagePatch: Record<string, unknown> = {};
+  if (ratingsEnabled !== undefined) pagePatch.ratings_enabled = ratingsEnabled;
+
+  // no-op: 제목/본문이 현재와 동일하면 새 리비전을 만들지 않음
+  let changed = true;
   if (page.current_revision_id) {
     const { data: cur } = await db
       .from("page_revisions")
       .select("title, content")
       .eq("id", page.current_revision_id)
       .maybeSingle();
-    if (cur && cur.title === title && cur.content === content) {
-      return { changed: false }; // 변경 없음 → 새 버전 안 만듦
-    }
+    if (cur && cur.title === title && cur.content === content) changed = false;
   }
 
-  const { data: rev, error } = await db
-    .from("page_revisions")
-    .insert({ page_id: pageId, title, content, summary, author_id: authorId })
-    .select("id")
-    .single();
-  if (error || !rev) throw new Error("수정 실패: " + (error?.message ?? ""));
+  if (changed) {
+    const { data: rev, error } = await db
+      .from("page_revisions")
+      .insert({ page_id: pageId, title, content, summary, author_id: authorId })
+      .select("id")
+      .single();
+    if (error || !rev) throw new Error("수정 실패: " + (error?.message ?? ""));
+    pagePatch.title = title;
+    pagePatch.current_revision_id = rev.id;
+    pagePatch.updated_at = nowIso();
+  }
 
-  await db
-    .from("pages")
-    .update({ title, current_revision_id: rev.id, updated_at: nowIso() })
-    .eq("id", pageId);
+  if (Object.keys(pagePatch).length > 0) {
+    await db.from("pages").update(pagePatch).eq("id", pageId);
+  }
 
-  return { changed: true };
+  return { changed };
 }
 
 export async function softDeletePage(userId: string, pageId: string): Promise<void> {
@@ -320,5 +338,13 @@ export async function restoreRevision(
 ): Promise<void> {
   const rev = await getRevision(pageId, revisionId);
   if (!rev) throw new AuthError("복원할 리비전을 찾을 수 없습니다.", 404);
-  await updatePage(userId, pageId, rev.title, rev.content, "이전 버전 복원", null);
+  await updatePage(
+    userId,
+    pageId,
+    rev.title,
+    rev.content,
+    "이전 버전 복원",
+    undefined,
+    null
+  );
 }

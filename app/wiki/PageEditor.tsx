@@ -19,17 +19,22 @@ export default function PageEditor({
   baseRevisionId,
   initialTitle = "",
   initialContent = "",
+  ratingsAllowed = false,
+  initialRatingsEnabled = false,
 }: {
   mode: "new" | "edit";
   pageId?: string;
   baseRevisionId?: string | null;
   initialTitle?: string;
   initialContent?: string;
+  ratingsAllowed?: boolean;
+  initialRatingsEnabled?: boolean;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [summary, setSummary] = useState("");
+  const [ratingsEnabled, setRatingsEnabled] = useState(initialRatingsEnabled);
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +48,13 @@ export default function PageEditor({
       const res = await fetch(url, {
         method,
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ title, content, summary, baseRevisionId }),
+        body: JSON.stringify({
+          title,
+          content,
+          summary,
+          ratingsEnabled,
+          baseRevisionId,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -129,6 +140,25 @@ export default function PageEditor({
         maxLength={200}
         style={{ ...inputStyle, marginTop: 12, fontSize: 14 }}
       />
+
+      {ratingsAllowed && (
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginTop: 12,
+            fontSize: 14,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={ratingsEnabled}
+            onChange={(e) => setRatingsEnabled(e.target.checked)}
+          />
+          ⭐ 이 글에 평가(점수) 받기
+        </label>
+      )}
 
       {error && (
         <div style={{ color: "#c62828", marginTop: 12 }}>{error}</div>
