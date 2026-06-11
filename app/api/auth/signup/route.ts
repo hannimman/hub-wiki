@@ -3,6 +3,7 @@ import { getAdminDb } from "@/lib/db";
 import { hashPassword, createSession, AuthError } from "@/lib/auth";
 import { sanitizeAvatarV2 } from "@/lib/avatar/render";
 import { award, getPointConfig } from "@/lib/points";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,14 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
     if (!body) throw new AuthError("잘못된 요청입니다.", 400);
+
+    // 초대 토큰 무차별 추측 완화: IP 기준 10분당 10회
+    const rl = rateLimit(`signup:ip:${clientIp(req)}`, 10, 10 * 60_000);
+    if (!rl.ok)
+      throw new AuthError(
+        `시도가 너무 많습니다. ${rl.retryAfterSec}초 후 다시 시도하세요.`,
+        429
+      );
 
     const token = String(body.token ?? "").trim();
     const displayName = String(body.displayName ?? "").trim();

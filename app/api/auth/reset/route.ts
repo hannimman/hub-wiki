@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/db";
 import { hashPassword, passwordError, AuthError } from "@/lib/auth";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,14 @@ export async function POST(req: Request) {
 
     const username = String(body.username ?? "").trim().toLowerCase();
     if (!username) throw new AuthError("아이디를 입력하세요.", 400);
+
+    // 무차별 시도(대기 계정 탐색·비번 설정 시도) 완화: IP 기준 5분당 10회
+    const rl = rateLimit(`reset:ip:${clientIp(req)}`, 10, 5 * 60_000);
+    if (!rl.ok)
+      throw new AuthError(
+        `시도가 너무 많습니다. ${rl.retryAfterSec}초 후 다시 시도하세요.`,
+        429
+      );
 
     const db = getAdminDb();
     const { data: user } = await db
