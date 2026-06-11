@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser, AuthError } from "@/lib/auth";
 import { getAdminDb } from "@/lib/db";
-import { sanitizeConfig, PRESET_IDS } from "@/lib/avatars";
-import { sanitizeAvatarV2, type AvatarV2Data } from "@/lib/avatar/render";
+import { sanitizeAvatarV2 } from "@/lib/avatar/render";
 import { listOwned } from "@/lib/points";
 
 export const dynamic = "force-dynamic";
@@ -15,20 +14,9 @@ export async function PATCH(req: Request) {
     const body = await req.json().catch(() => null);
     if (!body) throw new AuthError("잘못된 요청입니다.", 400);
 
-    let avatar = String(body.avatar ?? "v2").trim();
-    let avatarConfig:
-      | ReturnType<typeof sanitizeConfig>
-      | AvatarV2Data
-      | null = null;
-
-    if (avatar === "v2") {
-      const owned = new Set(await listOwned(user.id));
-      avatarConfig = sanitizeAvatarV2(body.avatarConfig, owned);
-    } else if (avatar === "custom") {
-      avatarConfig = sanitizeConfig(body.avatarConfig);
-    } else if (!PRESET_IDS.includes(avatar)) {
-      avatar = "m1";
-    }
+    const avatar = "v2";
+    const owned = new Set(await listOwned(user.id));
+    const avatarConfig = sanitizeAvatarV2(body.avatarConfig, owned);
 
     const db = getAdminDb();
     const { error } = await db

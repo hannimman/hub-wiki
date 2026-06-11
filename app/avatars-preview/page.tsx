@@ -1,4 +1,3 @@
-import { AVATARS, Avatar } from "@/lib/avatars";
 import {
   AvatarFullV2,
   AvatarBustV2,
@@ -7,7 +6,7 @@ import {
 } from "@/lib/avatar/render";
 
 // 임시: 아바타 디자인 확인용 페이지. (/avatars-preview)
-// v2(레이어드 전신) 렌더 검증 + 레거시 비교.
+// v2(레이어드 전신) 렌더 검증용.
 
 const SAMPLES: { label: string; data: AvatarV2Data }[] = [
   { label: "기본", data: DEFAULT_AVATAR_V2 },
@@ -60,7 +59,7 @@ const SAMPLES: { label: string; data: AvatarV2Data }[] = [
     data: {
       v: 2,
       face: { eyes: 'eyes-basic', nose: 'nose-none', mouth: 'mouth-smile' },
-      equipped: { hat: 'cos-tr-ears', faceAcc: 'cos-tr-face', top: 'cos-tr-top', bottom: 'cos-tr-bottom', shoes: 'cos-tr-shoes' },
+      equipped: { hat: 'cos-tr-ears', faceAcc: 'cos-tr-face', top: 'cos-tr-top', bottom: 'cos-dg-bottom', shoes: 'cos-tr-shoes' },
     },
   },
 ];
@@ -98,16 +97,6 @@ export default function AvatarsPreviewPage() {
         ))}
         {SAMPLES.map((s) => (
           <AvatarBustV2 key={s.label + "-sm"} data={s.data} size={30} />
-        ))}
-      </div>
-
-      <h2 style={{ fontSize: 18, marginTop: 28 }}>레거시 (기존 유저 호환 확인)</h2>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        {AVATARS.map((a) => (
-          <div key={a.id} style={{ textAlign: "center" }}>
-            <Avatar id={a.id} size={56} />
-            <div className="muted" style={{ fontSize: 11 }}>{a.id}</div>
-          </div>
         ))}
       </div>
     </main>

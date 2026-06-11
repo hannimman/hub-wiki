@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/db";
 import { hashPassword, createSession, AuthError } from "@/lib/auth";
-import { sanitizeConfig, PRESET_IDS } from "@/lib/avatars";
-import { sanitizeAvatarV2, type AvatarV2Data } from "@/lib/avatar/render";
+import { sanitizeAvatarV2 } from "@/lib/avatar/render";
 import { award, getPointConfig } from "@/lib/points";
 
 export const dynamic = "force-dynamic";
@@ -19,20 +18,9 @@ export async function POST(req: Request) {
     const displayName = String(body.displayName ?? "").trim();
     const username = String(body.username ?? "").trim().toLowerCase();
     const password = String(body.password ?? "");
-    let avatar = String(body.avatar ?? "v2").trim();
-    let avatarConfig:
-      | ReturnType<typeof sanitizeConfig>
-      | AvatarV2Data
-      | null = null;
-    if (avatar === "v2") {
-      // 가입 시점엔 보유 아이템 0 → equipped 는 전부 null 로 강제(얼굴만 자유)
-      avatarConfig = sanitizeAvatarV2(body.avatarConfig, new Set());
-    } else if (avatar === "custom") {
-      avatarConfig = sanitizeConfig(body.avatarConfig);
-    } else if (!PRESET_IDS.includes(avatar)) {
-      avatar = "v2";
-      avatarConfig = sanitizeAvatarV2(null, new Set());
-    }
+    // 가입 시점엔 보유 아이템 0 → equipped 는 전부 null 로 강제(얼굴만 자유)
+    const avatar = "v2";
+    const avatarConfig = sanitizeAvatarV2(body.avatarConfig, new Set());
 
     if (!token) throw new AuthError("초대 토큰이 없습니다.", 400);
     if (displayName.length < 1 || displayName.length > 30)
