@@ -4,12 +4,16 @@ import { useState } from "react";
 import { ITEM_INDEX } from "@/lib/avatar/catalog";
 import { REASON_LABEL, type PointTx } from "@/lib/points-shared";
 
-// 이력 한 줄 설명: 상점 구매는 아이템 코드 대신 한글명으로
+// 이력 한 줄 설명: 상점 구매/가챠/드롭은 아이템 한글명, 선물은 상대 이름으로
 function describe(t: PointTx): string {
   const label = REASON_LABEL[t.reason] ?? t.reason;
-  if (t.reason === "buy" && t.ref) {
+  if ((t.reason === "buy" || t.reason === "gacha" || t.reason === "item_drop") && t.ref) {
     const item = ITEM_INDEX[t.ref]?.item;
     return `${label} · ${item ? item.name : t.ref}`;
+  }
+  if ((t.reason === "gift_sent" || t.reason === "gift_received") && t.ref) {
+    // ref 는 서버(마이페이지)에서 상대 이름으로 변환돼 내려온다
+    return `${label} · ${t.ref}`;
   }
   if ((t.reason === "grant" || t.reason === "event") && t.ref) {
     return `${label} · ${t.ref}`;
