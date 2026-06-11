@@ -53,7 +53,8 @@ export default async function SiteHeader() {
               <span className="uname">{user.display_name}</span>
             </Link>
             <LogoutButton />
-            {unread.length > 0 && <GiftAlert items={unread} />}
+            {/* 항상 렌더 — 경로 변경 감지·폴링으로 도착 알림을 띄운다 */}
+            <GiftAlert initialItems={unread} />
           </>
         ) : (
           <Link className="btn btn-primary btn-sm" href="/login">
