@@ -54,7 +54,6 @@ export default function TeamVillage({
         el.style.left = `${x}px`;
         el.style.bottom = `${bottom}px`;
         el.style.transform = `scale(${scaleFor(bottom)})`;
-        el.style.zIndex = `${Math.round(200 - bottom)}`;
       };
 
       const randPos = () => ({
@@ -127,6 +126,21 @@ export default function TeamVillage({
       );
     });
 
+    // 겹침 순서 — 이동 중에도 "실제 발 위치" 기준으로 매 프레임 갱신.
+    // (이동 시작 시 목표값으로 한 번만 정하면 걸어가는 동안 앞뒤가 어긋난다)
+    let rafId = 0;
+    const syncZ = () => {
+      if (!alive) return;
+      const top = village.getBoundingClientRect().top;
+      chars.forEach((el) => {
+        el.style.zIndex = `${Math.round(
+          el.getBoundingClientRect().bottom - top
+        )}`;
+      });
+      rafId = window.requestAnimationFrame(syncZ);
+    };
+    rafId = window.requestAnimationFrame(syncZ);
+
     // 눈 깜빡임 (마을 공용)
     const blink = () => {
       if (!alive) return;
@@ -163,6 +177,7 @@ export default function TeamVillage({
 
     return () => {
       alive = false;
+      window.cancelAnimationFrame(rafId);
       timers.forEach((t) => window.clearTimeout(t));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
