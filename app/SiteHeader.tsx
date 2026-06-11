@@ -33,12 +33,14 @@ export default async function SiteHeader() {
             <Link className="btn btn-primary btn-sm" href="/wiki/new">
               ✏️ 새 글
             </Link>
+            {user.role === "super" && (
+              <Link className="btn btn-sm" href="/super">
+                🦸 슈퍼
+              </Link>
+            )}
             {(user.role === "super" || user.role === "admin") && (
-              <Link
-                className="btn btn-sm"
-                href={user.role === "super" ? "/super" : "/admin"}
-              >
-                {user.role === "super" ? "🦸 슈퍼" : "🛡️ 관리자"}
+              <Link className="btn btn-sm" href="/admin">
+                🛡️ 관리자
               </Link>
             )}
             <Link href="/me" className="hdr-user" title="마이페이지">
