@@ -56,7 +56,9 @@ export default function SuperControls({
 
   // ── 포인트: 지급 (전체 / 선택) ──
   const [grantScope, setGrantScope] = useState<"all" | "selected">("all");
-  const [grantAmount, setGrantAmount] = useState(100);
+  // 문자열로 들고 있어야 "-" 입력 도중 상태가 NaN 으로 깨지지 않는다 (음수 = 회수)
+  const [grantAmountStr, setGrantAmountStr] = useState("100");
+  const grantAmount = Math.trunc(Number(grantAmountStr)) || 0;
   const [grantNote, setGrantNote] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -307,9 +309,14 @@ export default function SuperControls({
             <option value="selected">👤 선택한 유저</option>
           </select>
           <input
-            type="number"
-            value={grantAmount}
-            onChange={(e) => setGrantAmount(Math.trunc(Number(e.target.value)))}
+            type="text"
+            inputMode="numeric"
+            placeholder="예: 500, -500"
+            value={grantAmountStr}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (/^-?\d*$/.test(v)) setGrantAmountStr(v);
+            }}
             style={{ width: 110, padding: "7px 10px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14, textAlign: "right" }}
           />
           <span style={{ color: "#b45309", fontWeight: 700 }}>P</span>
