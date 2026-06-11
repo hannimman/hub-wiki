@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // 미확인 알림 모달 — 공용 헤더가 매 페이지 렌더마다 미읽음을 내려주므로
@@ -30,6 +30,10 @@ export default function GiftAlert({ items }: { items: Item[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(items.length > 0);
   const [busy, setBusy] = useState(false);
+  // 시간 표기는 서버/브라우저 로케일·시간대가 달라 hydration 불일치를 일으키므로
+  // 마운트 후(클라이언트에서만) 채운다.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   if (!open || items.length === 0) return null;
 
   async function confirmRead() {
@@ -68,7 +72,7 @@ export default function GiftAlert({ items }: { items: Item[] }) {
                   </div>
                 )}
                 <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>
-                  {new Date(n.created_at).toLocaleString("ko-KR")}
+                  {mounted ? new Date(n.created_at).toLocaleString("ko-KR") : " "}
                 </div>
               </li>
             );
