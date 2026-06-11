@@ -2,12 +2,17 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { Avatar } from "@/lib/avatars";
 import { getPoints } from "@/lib/points";
+import { listUnread } from "@/lib/notifications";
 import LogoutButton from "./LogoutButton";
+import GiftAlert from "./GiftAlert";
 
 // 모든 페이지 상단 공용 헤더. 서버 컴포넌트로 현재 유저를 직접 읽는다.
+// 미확인 알림(선물 등)은 매 페이지 렌더마다 조회 → 모달로 표시.
 export default async function SiteHeader() {
   const user = await getCurrentUser();
-  const points = user ? await getPoints(user.id) : 0;
+  const [points, unread] = user
+    ? await Promise.all([getPoints(user.id), listUnread(user.id)])
+    : [0, [] as Awaited<ReturnType<typeof listUnread>>];
 
   return (
     <header className="site-header">
@@ -48,6 +53,7 @@ export default async function SiteHeader() {
               <span className="uname">{user.display_name}</span>
             </Link>
             <LogoutButton />
+            {unread.length > 0 && <GiftAlert items={unread} />}
           </>
         ) : (
           <Link className="btn btn-primary btn-sm" href="/login">

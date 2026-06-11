@@ -52,7 +52,13 @@ export default async function AdminPointsPage() {
                 <td style={td}>{i + 1}</td>
                 <td style={td}>
                   <span className="row" style={{ gap: 8 }}>
-                    <Avatar id={u.avatar} config={u.avatar_config} size={26} />
+                    <Avatar
+                      id={u.avatar}
+                      config={u.avatar_config}
+                      size={26}
+                      ownerId={u.id}
+                      ownerName={u.display_name}
+                    />
                     <b>{u.display_name}</b>
                     {!u.is_active && (
                       <span className="muted" style={{ fontSize: 12 }}>

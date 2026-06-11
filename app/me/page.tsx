@@ -11,6 +11,7 @@ import {
   getPoints,
   hasCheckedInToday,
   listTransactions,
+  resolveUserNames,
 } from "@/lib/points";
 import { listMyPrivatePages } from "@/lib/pages";
 import AttendanceCard from "./AttendanceCard";
@@ -29,12 +30,28 @@ export default async function MyPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [points, checkedIn, txs, privatePages] = await Promise.all([
+  const [points, checkedIn, rawTxs, privatePages] = await Promise.all([
     getPoints(user.id),
     hasCheckedInToday(user.id),
     listTransactions(user.id, 30),
     listMyPrivatePages(user.id),
   ]);
+
+  // 선물 이력의 ref(상대 uuid)를 이름으로 바꿔 표시
+  const giftIds = [
+    ...new Set(
+      rawTxs
+        .filter((t) => t.reason === "gift_sent" || t.reason === "gift_received")
+        .map((t) => t.ref)
+        .filter((v): v is string => !!v)
+    ),
+  ];
+  const names = await resolveUserNames(giftIds);
+  const txs = rawTxs.map((t) =>
+    (t.reason === "gift_sent" || t.reason === "gift_received") && t.ref
+      ? { ...t, ref: names[t.ref] ?? t.ref }
+      : t
+  );
 
   const avatarData: AvatarV2Data = isV2(user.avatar_config)
     ? (user.avatar_config as AvatarV2Data)

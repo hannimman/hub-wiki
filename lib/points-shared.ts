@@ -56,6 +56,8 @@ export const REASON_LABEL: Record<string, string> = {
   buy: "상점 구매",
   grant: "슈퍼 지급",
   event: "이벤트 지급",
+  gift_sent: "선물 보냄",
+  gift_received: "선물 받음",
 };
 
 export type PointTx = {

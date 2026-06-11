@@ -34,7 +34,13 @@ export default async function RecentChangesPage() {
                 borderBottom: "1px solid #eee",
               }}
             >
-              <Avatar id={c.author_avatar} config={c.author_config} size={32} />
+              <Avatar
+                id={c.author_avatar}
+                config={c.author_config}
+                size={32}
+                ownerId={c.author_id}
+                ownerName={c.author_name}
+              />
               <div style={{ flex: 1 }}>
                 <Link
                   href={`/wiki/${c.slug}`}

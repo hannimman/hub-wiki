@@ -53,6 +53,7 @@ export type RecentChange = {
   page_title: string;
   summary: string;
   created_at: string;
+  author_id: string | null; // 아바타 카드(선물) 모달용
   author_name: string | null;
   author_avatar: string | null;
   author_config: AvatarConfig | null;
@@ -810,7 +811,7 @@ export async function listRecentChanges(
   const { data, error } = await db
     .from("page_revisions")
     .select(
-      "id, page_id, summary, created_at, pages:page_id (slug, title, is_deleted, is_private, created_by), users:author_id (display_name, avatar, avatar_config)"
+      "id, page_id, summary, created_at, pages:page_id (slug, title, is_deleted, is_private, created_by), users:author_id (id, display_name, avatar, avatar_config)"
     )
     .order("created_at", { ascending: false })
     .limit(60);
@@ -852,6 +853,7 @@ export async function listRecentChanges(
     page_title: r.pages.title,
     summary: r.summary ?? "",
     created_at: r.created_at,
+    author_id: r.users?.id ?? null,
     author_name: r.users?.display_name ?? null,
     author_avatar: r.users?.avatar ?? null,
     author_config: r.users?.avatar_config ?? null,

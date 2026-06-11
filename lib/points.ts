@@ -191,6 +191,39 @@ export async function buyItem(
   return data as "ok" | "owned" | "insufficient";
 }
 
+// 선물 이력의 ref(상대 uuid) → 표시용 이름 매핑
+export async function resolveUserNames(
+  ids: string[]
+): Promise<Record<string, string>> {
+  if (ids.length === 0) return {};
+  const db = getAdminDb();
+  const { data } = await db
+    .from("users")
+    .select("id, display_name")
+    .in("id", ids);
+  const out: Record<string, string> = {};
+  for (const u of (data ?? []) as { id: string; display_name: string }[]) {
+    out[u.id] = u.display_name;
+  }
+  return out;
+}
+
+// ── 포인트 선물 ── 원자 RPC(gift_points, 0014). 잔액 검증·차감·지급·이력 2건.
+export async function giftPoints(
+  fromId: string,
+  toId: string,
+  amount: number
+): Promise<"ok" | "invalid" | "self" | "insufficient"> {
+  const db = getAdminDb();
+  const { data, error } = await db.rpc("gift_points", {
+    p_from: fromId,
+    p_to: toId,
+    p_amount: amount,
+  });
+  if (error) throw new Error("선물 처리 실패: " + error.message);
+  return data as "ok" | "invalid" | "self" | "insufficient";
+}
+
 // ── 슈퍼 지급 ── (amount 음수면 회수). reason: 'grant'(개별/선택) | 'event'(전체)
 export async function grantToUsers(
   userIds: string[],

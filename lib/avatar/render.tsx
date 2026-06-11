@@ -214,9 +214,13 @@ export function composeBustSvg(data: AvatarV2Data): string {
 export function AvatarBustV2({
   data,
   size = 32,
+  ownerId,
+  ownerName,
 }: {
   data: AvatarV2Data;
   size?: number;
+  ownerId?: string | null; // 있으면 클릭 시 아바타 카드(+선물) 모달
+  ownerName?: string | null;
 }) {
   return (
     <BustHover
@@ -225,6 +229,8 @@ export function AvatarBustV2({
       fullViewBox={VIEWBOX_FULL}
       bustSvg={composeBustSvg(data)}
       fullSvg={composeFlatFullSvg(data)}
+      ownerId={ownerId}
+      ownerName={ownerName}
     />
   );
 }

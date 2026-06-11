@@ -73,6 +73,8 @@ export default async function AdminActivityPage({
                       id={r.user.avatar}
                       config={r.user.avatar_config}
                       size={26}
+                      ownerId={r.user.id}
+                      ownerName={r.user.display_name}
                     />
                     <b>{r.user.display_name}</b>
                     {!r.user.is_active && (

@@ -122,6 +122,8 @@ export default async function WikiHome({
                     id={c.author_avatar ?? "m1"}
                     config={c.author_config}
                     size={30}
+                    ownerId={c.author_id}
+                    ownerName={c.author_name}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <Link
