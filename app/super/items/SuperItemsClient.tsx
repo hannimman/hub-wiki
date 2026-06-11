@@ -120,7 +120,19 @@ export default function SuperItemsClient({
             <span style={{ color: "#b45309", fontWeight: 700 }}>P</span>
             <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
               <input type="checkbox" checked={cRigid} onChange={(e) => setCRigid(e.target.checked)} />
-              rigid(관절 분리 안 함)
+              rigid
+              <span
+                className="help-tip"
+                data-tip={
+                  "걸을 때 하의·신발류는 왼/오른다리로 반 갈라져 다리와 함께 흔들립니다.\n" +
+                  "rigid를 켜면 가르지 않고 한 덩어리로 둡니다.\n" +
+                  "⭕ 켜기: 치마·원피스·로브처럼 가르면 찢어져 보이는 아이템\n" +
+                  "❌ 끄기(기본): 바지·반바지·신발\n" +
+                  "다리와 무관한 슬롯(모자·손 등)은 영향 없음"
+                }
+              >
+                ?
+              </span>
             </label>
           </div>
           <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
