@@ -67,7 +67,10 @@ function nowIso(): string {
 }
 
 // 목록 + 검색(제목 + 본문). 검색어 있으면 RPC(search_pages) 사용.
-export async function listPages(query?: string): Promise<PageListItem[]> {
+export async function listPages(
+  query?: string,
+  viewerId?: string
+): Promise<PageListItem[]> {
   const db = getAdminDb();
   const term = query?.trim();
 
@@ -75,22 +78,29 @@ export async function listPages(query?: string): Promise<PageListItem[]> {
     const { data, error } = await db.rpc("search_pages", { q: term });
     if (error) throw new Error("검색 실패: " + error.message);
     const rows = (data ?? []) as PageListItem[];
-    // 검색 RPC(0005)는 비공개를 모름 → 결과에서 비공개 글 제외
+    // 검색 RPC(0005)는 비공개를 모름 → 비공개 글은 작성자 본인에게만 노출
     if (rows.length === 0) return rows;
     const { data: privs } = await db
       .from("pages")
-      .select("id")
+      .select("id, created_by")
       .in("id", rows.map((r) => r.id))
       .eq("is_private", true);
-    const privateIds = new Set((privs ?? []).map((p) => (p as any).id));
-    return rows.filter((r) => !privateIds.has(r.id));
+    const hidden = new Set(
+      ((privs ?? []) as { id: string; created_by: string | null }[])
+        .filter((p) => !viewerId || p.created_by !== viewerId)
+        .map((p) => p.id)
+    );
+    return rows.filter((r) => !hidden.has(r.id));
   }
 
-  const { data, error } = await db
+  let q = db
     .from("pages")
     .select("id, slug, title, updated_at")
-    .eq("is_deleted", false)
-    .eq("is_private", false)
+    .eq("is_deleted", false);
+  q = viewerId
+    ? q.or(`is_private.eq.false,created_by.eq.${viewerId}`)
+    : q.eq("is_private", false);
+  const { data, error } = await q
     .order("updated_at", { ascending: false })
     .limit(500);
   if (error) throw new Error("문서 목록 조회 실패: " + error.message);
@@ -152,7 +162,7 @@ export async function getTitleSlugMap(): Promise<Record<string, string>> {
     .from("pages")
     .select("slug, title")
     .eq("is_deleted", false)
-    .eq("is_private", false)
+    .eq("is_private", false) // [[링크]] 해석은 공개 글만 (비공개 제목 유출 방지)
     .limit(2000);
   const map: Record<string, string> = {};
   for (const p of data ?? []) map[(p as any).title] = (p as any).slug;
@@ -167,18 +177,23 @@ export type PageTreeNode = {
   parent_id: string | null;
   is_folder: boolean;
   updated_at: string;
+  is_private: boolean;
 };
 
 export type ParentOption = { id: string; label: string };
 
 // 삭제되지 않은 전체 문서/폴더(부모정보 포함) — 트리/경로/상위선택에 공용으로 쓴다.
-export async function listTree(): Promise<PageTreeNode[]> {
+// viewerId 를 주면 "공개 글 + 내 비공개 글"이 보인다(본인 트리에는 🔒로 표시).
+export async function listTree(viewerId?: string): Promise<PageTreeNode[]> {
   const db = getAdminDb();
-  const { data, error } = await db
+  let q = db
     .from("pages")
-    .select("id, slug, title, parent_id, is_folder, updated_at")
-    .eq("is_deleted", false)
-    .eq("is_private", false)
+    .select("id, slug, title, parent_id, is_folder, updated_at, is_private")
+    .eq("is_deleted", false);
+  q = viewerId
+    ? q.or(`is_private.eq.false,created_by.eq.${viewerId}`)
+    : q.eq("is_private", false);
+  const { data, error } = await q
     .order("is_folder", { ascending: false })
     .order("title", { ascending: true })
     .limit(2000);
@@ -788,19 +803,24 @@ export async function listRevisions(pageId: string): Promise<RevisionItem[]> {
 }
 
 // 최근 변경 (전체 위키)
-export async function listRecentChanges(): Promise<RecentChange[]> {
+export async function listRecentChanges(
+  viewerId?: string
+): Promise<RecentChange[]> {
   const db = getAdminDb();
   const { data, error } = await db
     .from("page_revisions")
     .select(
-      "id, page_id, summary, created_at, pages:page_id (slug, title, is_deleted, is_private), users:author_id (display_name, avatar, avatar_config)"
+      "id, page_id, summary, created_at, pages:page_id (slug, title, is_deleted, is_private, created_by), users:author_id (display_name, avatar, avatar_config)"
     )
     .order("created_at", { ascending: false })
     .limit(60);
   if (error) throw new Error("최근 변경 조회 실패: " + error.message);
 
   const rows = (data ?? []).filter(
-    (r: any) => r.pages && !r.pages.is_deleted && !r.pages.is_private
+    (r: any) =>
+      r.pages &&
+      !r.pages.is_deleted &&
+      (!r.pages.is_private || (viewerId && r.pages.created_by === viewerId))
   );
 
   // 최초작성 판별: 관련 페이지들의 가장 오래된 리비전 id

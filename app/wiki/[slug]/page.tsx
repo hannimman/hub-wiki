@@ -72,7 +72,9 @@ export default async function PageView({
 
   // ── 폴더: 본문/평가 없이 하위 목록만 ──
   if (page.is_folder) {
-    const children = (await listTree()).filter((n) => n.parent_id === page.id);
+    const children = (await listTree(user.id)).filter(
+      (n) => n.parent_id === page.id
+    );
     return (
       <main style={wrap}>
         <Breadcrumb ancestors={ancestors} />
@@ -101,7 +103,7 @@ export default async function PageView({
                   borderBottom: "1px solid var(--border)",
                 }}
               >
-                <span>{c.is_folder ? "📁" : "📄"}</span>
+                <span>{c.is_folder ? "📁" : c.is_private ? "🔒" : "📄"}</span>
                 <Link
                   href={`/wiki/${c.slug}`}
                   style={{

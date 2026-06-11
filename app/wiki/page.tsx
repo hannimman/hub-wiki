@@ -35,8 +35,9 @@ export default async function WikiHome({
 
   const { q } = await searchParams;
   const searching = !!q?.trim();
-  const results = searching ? await listPages(q) : [];
-  const recent = searching ? [] : await listRecentChanges();
+  // 비공개 글은 작성자 본인에게만 검색/최근변경에 노출
+  const results = searching ? await listPages(q, user.id) : [];
+  const recent = searching ? [] : await listRecentChanges(user.id);
 
   // 팀 광장: 활성 멤버 전원 (v2 아바타 아니면 기본 모습으로 산책)
   const members: PlazaMember[] = searching

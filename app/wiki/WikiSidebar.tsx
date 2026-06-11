@@ -10,6 +10,7 @@ export type SidebarNode = {
   title: string;
   parent_id: string | null;
   is_folder: boolean;
+  is_private?: boolean; // 내 비공개 글 (남에겐 서버에서 걸러져 안 옴)
 };
 type TNode = SidebarNode & { children: TNode[] };
 
@@ -328,7 +329,9 @@ export default function WikiSidebar({
                 >
                   ⠿
                 </span>
-                <span className="tw-icon">{node.is_folder ? "📁" : "📄"}</span>
+                <span className="tw-icon">
+                  {node.is_folder ? "📁" : node.is_private ? "🔒" : "📄"}
+                </span>
 
                 {renamingId === node.id ? (
                   <input

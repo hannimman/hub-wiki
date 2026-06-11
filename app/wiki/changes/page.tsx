@@ -10,7 +10,7 @@ export default async function RecentChangesPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const changes = await listRecentChanges();
+  const changes = await listRecentChanges(user.id); // 내 비공개 글 변경은 나에게만
 
   return (
     <main className="container page">
