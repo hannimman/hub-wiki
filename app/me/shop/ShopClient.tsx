@@ -22,7 +22,15 @@ const GHOST_SLOTS = new Set([
   "hair", "hat", "faceAcc", "beard", "top", "bottom", "shoes", "handL", "handR",
 ]);
 
-type Tab = "face" | "shop" | "inv";
+type Tab = "face" | "shop" | "gacha" | "inv";
+
+type GachaResult = {
+  id: string;
+  name: string;
+  slotId: string;
+  price: number;
+  svg: string;
+};
 
 export default function ShopClient({
   initialData,
@@ -354,9 +362,83 @@ export default function ShopClient({
     );
   }
 
+  // ── 가챠 ──
+  const [spinning, setSpinning] = useState(false);
+  const [gachaResult, setGachaResult] = useState<GachaResult | null>(null);
+
+  async function pullGacha() {
+    if (spinning) return;
+    setGachaResult(null);
+    setSpinning(true);
+    const res = await fetch("/api/shop/gacha", { method: "POST" });
+    const d = await res.json().catch(() => ({}));
+    // 캡슐 연출 시간 확보
+    window.setTimeout(() => {
+      setSpinning(false);
+      if (res.ok) {
+        setGachaResult(d.item as GachaResult);
+        setOwned((prev) => new Set(prev).add(d.item.id));
+        setPoints(d.balance);
+      } else {
+        showToast(d.error ?? "가챠에 실패했습니다.");
+      }
+    }, 1300);
+  }
+
+  function renderGachaTab() {
+    return (
+      <div style={{ textAlign: "center", padding: "18px 0" }}>
+        <div
+          style={{
+            fontSize: 84,
+            lineHeight: 1,
+            display: "inline-block",
+            animation: spinning ? "gachaShake 0.18s linear infinite" : undefined,
+          }}
+          aria-hidden
+        >
+          🎰
+        </div>
+        <p className="muted" style={{ fontSize: 13, margin: "10px 0 14px" }}>
+          미보유 아이템 중 하나가 무작위로! <b>비쌀수록 희귀</b>해요.
+          (중복 없음)
+        </p>
+        <button
+          className="btn btn-primary"
+          onClick={pullGacha}
+          disabled={spinning}
+          style={{ fontSize: 16, padding: "10px 26px" }}
+        >
+          {spinning ? "두근두근…" : "🎰 가챠 돌리기"}
+        </button>
+
+        {gachaResult && !spinning && (
+          <div
+            className="card"
+            style={{ maxWidth: 260, margin: "18px auto 0", textAlign: "center" }}
+          >
+            <div style={{ fontSize: 22 }}>🎉</div>
+            <svg
+              viewBox="0 0 320 400"
+              width={120}
+              height={150}
+              style={{ display: "block", margin: "6px auto", background: "#fafbfc", borderRadius: 10 }}
+              dangerouslySetInnerHTML={{ __html: gachaResult.svg }}
+            />
+            <div style={{ fontWeight: 800, fontSize: 16 }}>{gachaResult.name}</div>
+            <div className="muted" style={{ fontSize: 12 }}>
+              정가 🪙 {gachaResult.price.toLocaleString()}P — 인벤토리에 추가됐어요!
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const TABS: { id: Tab; label: string }[] = [
     { id: "face", label: "🙂 얼굴 (무료)" },
     { id: "shop", label: "🛒 상점" },
+    { id: "gacha", label: "🎰 가챠" },
     { id: "inv", label: "🎒 인벤토리" },
   ];
 
@@ -409,6 +491,7 @@ export default function ShopClient({
         <div className="shop-body">
           {tab === "face" && renderFaceTab()}
           {tab === "shop" && renderShopTab()}
+          {tab === "gacha" && renderGachaTab()}
           {tab === "inv" && renderInvTab()}
         </div>
       </div>

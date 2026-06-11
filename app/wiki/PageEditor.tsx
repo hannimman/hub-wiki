@@ -168,6 +168,10 @@ export default function PageEditor({
         setLoading(false);
         return;
       }
+      if (data.drop) {
+        // 🎁 글 작성 보너스 드롭 — 이동 전에 알림
+        alert(`🎁 아이템 획득!\n「${data.drop.name}」을(를) 얻었어요! 인벤토리를 확인해보세요.`);
+      }
       router.push(`/wiki/${data.slug}`);
       router.refresh();
     } catch {

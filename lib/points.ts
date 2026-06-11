@@ -208,6 +208,22 @@ export async function resolveUserNames(
   return out;
 }
 
+// ── 가챠 ── 원자 RPC(gacha_pull, 0016). 대상 아이템은 호출부가 추첨해 전달.
+export async function gachaPull(
+  userId: string,
+  itemKey: string,
+  cost: number
+): Promise<"ok" | "owned" | "insufficient"> {
+  const db = getAdminDb();
+  const { data, error } = await db.rpc("gacha_pull", {
+    p_user: userId,
+    p_item: itemKey,
+    p_cost: cost,
+  });
+  if (error) throw new Error("가챠 처리 실패: " + error.message);
+  return data as "ok" | "owned" | "insufficient";
+}
+
 // ── 포인트 선물 ── 원자 RPC(gift_points, 0014). 잔액 검증·차감·지급·이력 2건.
 export async function giftPoints(
   fromId: string,

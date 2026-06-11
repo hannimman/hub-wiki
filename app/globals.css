@@ -995,6 +995,17 @@ a {
   left: 10px;
   animation-delay: 0.24s;
 }
+@keyframes gachaShake {
+  0% {
+    transform: rotate(-8deg) scale(1.02);
+  }
+  50% {
+    transform: rotate(8deg) scale(0.98);
+  }
+  100% {
+    transform: rotate(-8deg) scale(1.02);
+  }
+}
 @keyframes heartUp {
   0% {
     transform: translateY(6px) scale(0.6);

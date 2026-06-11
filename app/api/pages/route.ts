@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireUser, AuthError } from "@/lib/auth";
+import { getAdminDb } from "@/lib/db";
 import { createPage } from "@/lib/pages";
-import { award, countTodayByReason, getPointConfig } from "@/lib/points";
+import { award, countTodayByReason, getPointConfig, listOwned } from "@/lib/points";
 import { DAILY_CAP } from "@/lib/points-shared";
+import { getEffectiveCatalog } from "@/lib/avatar/catalog-db";
 
 // 적립 최소 본문 길이 — 빈 글 도배로 포인트 버는 것 방지
 const EARN_MIN_CONTENT = 100;
@@ -50,7 +52,42 @@ export async function POST(req: Request) {
       console.error("new doc points failed", e);
     }
 
-    return NextResponse.json({ ok: true, slug });
+    // 🎁 아이템 드롭 — 낮은 확률(슈퍼 설정 %), 하루 1회, 본문 100자 이상만
+    let drop: { id: string; name: string; svg: string } | null = null;
+    try {
+      const cfg = await getPointConfig();
+      if (
+        cfg.dropRate > 0 &&
+        content.trim().length >= EARN_MIN_CONTENT &&
+        Math.random() * 100 < cfg.dropRate &&
+        (await countTodayByReason(user.id, "item_drop")) < 1
+      ) {
+        const [{ index }, ownedArr] = await Promise.all([
+          getEffectiveCatalog(),
+          listOwned(user.id),
+        ]);
+        const owned = new Set(ownedArr);
+        const pool = Object.values(index).filter(
+          (it) => it.active && it.price > 0 && !owned.has(it.id)
+        );
+        if (pool.length > 0) {
+          const pick = pool[Math.floor(Math.random() * pool.length)];
+          const db = getAdminDb();
+          const { error } = await db
+            .from("owned_items")
+            .insert({ user_id: user.id, item_key: pick.id });
+          if (!error) {
+            // 이력(amount 0) — 표시 + 하루 1회 캡 집계용
+            await award(user.id, 0, "item_drop", pick.id);
+            drop = { id: pick.id, name: pick.name, svg: pick.svg };
+          }
+        }
+      }
+    } catch (e) {
+      console.error("item drop failed", e);
+    }
+
+    return NextResponse.json({ ok: true, slug, drop });
   } catch (e) {
     if (e instanceof AuthError)
       return NextResponse.json({ error: e.message }, { status: e.status });

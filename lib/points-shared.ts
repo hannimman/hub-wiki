@@ -10,6 +10,8 @@ export const POINTS = {
   ratingReceived: 2,
   ratingGiven: 3,
   deleteDoc: 0, // 문서 삭제 — 음수로 설정하면 차감(기본 0 = 차감 없음)
+  gachaCost: 300, // 가챠 1회 비용
+  dropRate: 5, // 글 작성 시 아이템 드롭 확률(%)
 } as const;
 
 export type PointConfig = {
@@ -20,6 +22,8 @@ export type PointConfig = {
   ratingReceived: number;
   ratingGiven: number;
   deleteDoc: number;
+  gachaCost: number;
+  dropRate: number;
 };
 
 // 음수 허용 항목 (차감용)
@@ -35,6 +39,8 @@ export const POINT_CONFIG_LABEL: Record<keyof PointConfig, string> = {
   ratingReceived: "평가 받음 (건당)",
   ratingGiven: "평가 참여 (건당, 하루 10회까지)",
   deleteDoc: "문서 삭제 (음수 입력 = 차감)",
+  gachaCost: "가챠 1회 비용",
+  dropRate: "글 작성 아이템 드롭 확률 (%)",
 };
 
 // 하루 캡(남용 방지)
@@ -58,6 +64,8 @@ export const REASON_LABEL: Record<string, string> = {
   event: "이벤트 지급",
   gift_sent: "선물 보냄",
   gift_received: "선물 받음",
+  gacha: "가챠",
+  item_drop: "아이템 획득 (글 작성 보너스)",
 };
 
 export type PointTx = {
