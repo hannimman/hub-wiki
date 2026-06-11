@@ -12,13 +12,14 @@ export type VillageMember = {
   id: string;
   name: string;
   data: AvatarV2Data;
+  message: string | null; // 오늘의 한마디 (없으면 기본 인사말)
 };
 
 export async function getVillageMembers(): Promise<VillageMember[]> {
   const db = getAdminDb();
   const { data } = await db
     .from("users")
-    .select("id, display_name, avatar_config, is_active")
+    .select("id, display_name, avatar_config, is_active, status_message")
     .order("created_at", { ascending: true });
 
   return (data ?? [])
@@ -29,6 +30,7 @@ export async function getVillageMembers(): Promise<VillageMember[]> {
       data: isV2(u.avatar_config)
         ? (u.avatar_config as AvatarV2Data)
         : DEFAULT_AVATAR_V2,
+      message: (u.status_message ?? "").trim().slice(0, 50) || null,
     }));
 }
 

@@ -164,7 +164,27 @@ export const COSPLAY: Record<string, Item[]> = {
     },
   ],
 
+  handL: [
+    {
+      // 주가 하락(파란) 꺾은선 화살표 — 하락이라 헐값
+      id: "hand-stock-down-l", name: "주가 하락 화살표", price: 100,
+      svg: `<path d="M58 212 L80 234 L90 224 L112 248" stroke="#1c5fc4" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M58 212 L80 234 L90 224 L112 248" stroke="#5b8def" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <g transform="translate(116 252) rotate(139)"><polygon points="0,-17 11,9 -11,9" fill="#1c5fc4"/></g>
+        <text x="56" y="270" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#1c5fc4">-15%</text>`,
+    },
+  ],
+
   handR: [
+    {
+      // 주가 상승(빨간) 꺾은선 화살표 — 상승은 프리미엄
+      id: "hand-stock-up-r", name: "주가 상승 화살표", price: 1200,
+      svg: `<path d="M194 262 L214 242 L224 252 L246 226" stroke="#d62839" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M194 262 L214 242 L224 252 L246 226" stroke="#ff5a6a" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <g transform="translate(250 222) rotate(41)"><polygon points="0,-17 11,9 -11,9" fill="#d62839"/></g>
+        <text x="232" y="270" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#d62839">+15%</text>
+        <circle cx="260" cy="200" r="2.4" fill="#ffd34d"/><circle cx="248" cy="192" r="1.8" fill="#ffd34d"/>`,
+    },
     {
       id: "hand-milkt-r", name: "밀크T 태블릿", price: 550,
       svg: `<g transform="rotate(-16 230 234)">

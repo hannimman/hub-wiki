@@ -20,7 +20,14 @@ export default async function HomePage() {
         사내 팀의 지식을 한곳에. 우리 팀이 마을에서 기다리고 있어요.
       </p>
 
-      <TeamVillage members={members} scene={scene} />
+      <TeamVillage
+        members={members}
+        scene={scene}
+        meId={user?.id ?? null}
+        myMessage={
+          user ? members.find((m) => m.id === user.id)?.message ?? null : null
+        }
+      />
 
       {user ? (
         <div className="row" style={{ flexWrap: "wrap" }}>
