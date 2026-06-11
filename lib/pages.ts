@@ -36,6 +36,8 @@ export type RevisionItem = {
   author_config: AvatarConfig | null;
 };
 
+export type ChangeKind = "create" | "delete" | "restore" | "edit";
+
 export type RecentChange = {
   revision_id: string;
   slug: string;
@@ -45,6 +47,7 @@ export type RecentChange = {
   author_name: string | null;
   author_avatar: string | null;
   author_config: AvatarConfig | null;
+  kind: ChangeKind; // 최초작성/삭제/복원은 diff 가 무의미 → 목록에서 플래그로 표시
 };
 
 function genSlug(): string {
@@ -724,24 +727,48 @@ export async function listRecentChanges(): Promise<RecentChange[]> {
   const { data, error } = await db
     .from("page_revisions")
     .select(
-      "id, summary, created_at, pages:page_id (slug, title, is_deleted), users:author_id (display_name, avatar, avatar_config)"
+      "id, page_id, summary, created_at, pages:page_id (slug, title, is_deleted), users:author_id (display_name, avatar, avatar_config)"
     )
     .order("created_at", { ascending: false })
     .limit(60);
   if (error) throw new Error("최근 변경 조회 실패: " + error.message);
 
-  return (data ?? [])
-    .filter((r: any) => r.pages && !r.pages.is_deleted)
-    .map((r: any) => ({
-      revision_id: r.id,
-      slug: r.pages.slug,
-      page_title: r.pages.title,
-      summary: r.summary ?? "",
-      created_at: r.created_at,
-      author_name: r.users?.display_name ?? null,
-      author_avatar: r.users?.avatar ?? null,
-      author_config: r.users?.avatar_config ?? null,
-    }));
+  const rows = (data ?? []).filter((r: any) => r.pages && !r.pages.is_deleted);
+
+  // 최초작성 판별: 관련 페이지들의 가장 오래된 리비전 id
+  const pageIds = [...new Set(rows.map((r: any) => r.page_id as string))];
+  const firstOf = new Map<string, string>();
+  if (pageIds.length > 0) {
+    const { data: firsts } = await db
+      .from("page_revisions")
+      .select("id, page_id, created_at")
+      .in("page_id", pageIds)
+      .order("created_at", { ascending: true })
+      .limit(2000);
+    for (const f of (firsts ?? []) as { id: string; page_id: string }[]) {
+      if (!firstOf.has(f.page_id)) firstOf.set(f.page_id, f.id);
+    }
+  }
+
+  const kindOf = (r: any): ChangeKind => {
+    const s: string = r.summary ?? "";
+    if (s.startsWith("🗑 문서 삭제")) return "delete";
+    if (s.startsWith("♻ 휴지통에서 복원")) return "restore";
+    if (firstOf.get(r.page_id) === r.id) return "create";
+    return "edit";
+  };
+
+  return rows.map((r: any) => ({
+    revision_id: r.id,
+    slug: r.pages.slug,
+    page_title: r.pages.title,
+    summary: r.summary ?? "",
+    created_at: r.created_at,
+    author_name: r.users?.display_name ?? null,
+    author_avatar: r.users?.avatar ?? null,
+    author_config: r.users?.avatar_config ?? null,
+    kind: kindOf(r),
+  }));
 }
 
 export async function getRevision(pageId: string, revisionId: string) {

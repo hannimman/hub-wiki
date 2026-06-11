@@ -48,12 +48,35 @@ export default async function RecentChangesPage() {
                   {c.summary ? ` · ${c.summary}` : ""}
                 </div>
               </div>
-              <Link
-                href={`/wiki/${c.slug}/rev/${c.revision_id}`}
-                style={{ fontSize: 12, color: "#3b82f6" }}
-              >
-                변경내역
-              </Link>
+              {c.kind === "edit" ? (
+                <Link
+                  href={`/wiki/${c.slug}/rev/${c.revision_id}`}
+                  style={{ fontSize: 12, color: "#3b82f6" }}
+                >
+                  변경내역
+                </Link>
+              ) : (
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: "2px 10px",
+                    borderRadius: 999,
+                    whiteSpace: "nowrap",
+                    ...(c.kind === "create"
+                      ? { background: "#e8f5e9", color: "#2e7d32" }
+                      : c.kind === "delete"
+                      ? { background: "#fdecea", color: "#c62828" }
+                      : { background: "#e3f2fd", color: "#1565c0" }),
+                  }}
+                >
+                  {c.kind === "create"
+                    ? "🌱 최초 작성"
+                    : c.kind === "delete"
+                    ? "🗑 삭제"
+                    : "♻ 복원"}
+                </span>
+              )}
             </li>
           ))}
         </ul>
