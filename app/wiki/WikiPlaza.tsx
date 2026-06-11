@@ -7,7 +7,18 @@ export type PlazaMember = { id: string; name: string; data: AvatarV2Data };
 
 // 팀 광장 — 멤버들의 전신 아바타가 빈 공간을 천천히 돌아다닌다.
 // 각 캐릭터: 랜덤 목적지로 걷기(left CSS transition + .av-walk 관절 스윙 + 방향 flip) → 잠깐 쉬고 반복.
-export default function WikiPlaza({ members }: { members: PlazaMember[] }) {
+// className 으로 배경 변형(.plaza--doc 등), uidPrefix 로 페이지 내 SVG id 충돌 방지.
+export default function WikiPlaza({
+  members,
+  className = "",
+  uidPrefix = "plz",
+  title,
+}: {
+  members: PlazaMember[];
+  className?: string;
+  uidPrefix?: string;
+  title?: string; // 미지정 시 툴팁 없음 (팀 광장은 툴팁 없이)
+}) {
   const plazaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,10 +127,14 @@ export default function WikiPlaza({ members }: { members: PlazaMember[] }) {
   if (members.length === 0) return null;
 
   return (
-    <div className="plaza" ref={plazaRef} title="우리 팀">
+    <div
+      className={`plaza${className ? ` ${className}` : ""}`}
+      ref={plazaRef}
+      title={title}
+    >
       {members.map((m, i) => (
         <div key={m.id} className="plaza-char">
-          <AvatarFullV2 data={m.data} width={84} uid={`plz${i}`} noBg />
+          <AvatarFullV2 data={m.data} width={84} uid={`${uidPrefix}${i}`} noBg />
           <div className="plaza-name">{m.name}</div>
         </div>
       ))}

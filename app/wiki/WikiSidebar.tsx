@@ -463,7 +463,7 @@ export default function WikiSidebar({ nodes }: { nodes: SidebarNode[] }) {
 
       {forest.length === 0 ? (
         <p className="muted" style={{ padding: "10px 12px", fontSize: 13 }}>
-          아직 문서가 없어요. 위 📁＋ 로 폴더를, 아래 버튼으로 글을 만들어보세요.
+          아직 문서가 없어요. 위 📁＋ 로 폴더를, 헤더의 ✏️ 새 글 버튼으로 글을 만들어보세요.
         </p>
       ) : (
         <div
@@ -474,16 +474,6 @@ export default function WikiSidebar({ nodes }: { nodes: SidebarNode[] }) {
           {renderNodes(forest, 0)}
         </div>
       )}
-
-      <div style={{ padding: "10px 12px" }}>
-        <Link
-          href="/wiki/new"
-          className="btn btn-primary btn-sm"
-          style={{ width: "100%", justifyContent: "center" }}
-        >
-          ✏️ 새 글
-        </Link>
-      </div>
 
       {dragId && dragPos && (
         <div

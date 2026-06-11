@@ -8,7 +8,12 @@ import {
   getPageAuthors,
   listTree,
 } from "@/lib/pages";
-import { Avatar } from "@/lib/avatars";
+import {
+  isV2,
+  DEFAULT_AVATAR_V2,
+  type AvatarV2Data,
+} from "@/lib/avatar/render";
+import WikiPlaza, { type PlazaMember } from "../WikiPlaza";
 import {
   getRatingsEnabled,
   getMyRating,
@@ -118,6 +123,26 @@ export default async function PageView({
     page.id,
     page.created_by
   );
+
+  // 작성자·기여자 미니 광장 (팀 광장과 동일한 자율 애니메이션, 배경만 다름)
+  const toData = (cfg: unknown): AvatarV2Data =>
+    isV2(cfg) ? cfg : DEFAULT_AVATAR_V2;
+  const crew: PlazaMember[] = [
+    ...(author
+      ? [
+          {
+            id: author.id,
+            name: `✍️ ${author.display_name}`,
+            data: toData(author.avatar_config),
+          },
+        ]
+      : []),
+    ...contributors.map((c) => ({
+      id: c.id,
+      name: c.display_name,
+      data: toData(c.avatar_config),
+    })),
+  ];
   const ratingsEnabled = await getRatingsEnabled();
   let rating: {
     pageId: string;
@@ -150,32 +175,27 @@ export default async function PageView({
       </div>
 
       <h1 style={{ marginTop: 8 }}>{page.title}</h1>
+
+      <WikiPlaza
+        members={crew}
+        className="plaza--doc"
+        uidPrefix="dplz"
+        title={[
+          author ? `작성자 : ${author.display_name}` : null,
+          contributors.length > 0
+            ? `기여자 : ${contributors.map((c) => c.display_name).join(", ")}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join("\n")}
+      />
+
       <div
-        className="row"
+        className="row muted"
         style={{ fontSize: 13, marginBottom: 20, flexWrap: "wrap", gap: 8 }}
       >
-        {author && (
-          <span className="row" style={{ gap: 6 }}>
-            <Avatar id={author.avatar} config={author.avatar_config} size={24} />
-            <span>
-              ✍️ <b>{author.display_name}</b>
-            </span>
-          </span>
-        )}
-        {contributors.length > 0 && (
-          <span className="row" style={{ gap: 6 }}>
-            <span className="muted">· 기여자</span>
-            <span className="contrib-stack">
-              {contributors.map((c) => (
-                <span key={c.id} title={c.display_name}>
-                  <Avatar id={c.avatar} config={c.avatar_config} size={24} />
-                </span>
-              ))}
-            </span>
-          </span>
-        )}
-        <span className="muted">
-          · 마지막 수정 {new Date(page.updated_at).toLocaleString("ko-KR")}
+        <span>
+          마지막 수정 {new Date(page.updated_at).toLocaleString("ko-KR")}
         </span>
       </div>
 

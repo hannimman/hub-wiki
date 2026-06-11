@@ -852,6 +852,11 @@ a {
   overflow: hidden;
   background: linear-gradient(#eaf3fd 0%, #f4f9ff 70%, #e6ecdf 70%, #dfe6d4 100%);
 }
+/* 문서 보기 상단 — 작성자·기여자 미니 광장. 따뜻한 서재(벽+마루) 톤으로 팀 광장과 구분 */
+.plaza--doc {
+  margin: 6px 0 14px;
+  background: linear-gradient(#fdf3e4 0%, #fffaf0 70%, #ecdabd 70%, #e1cba4 100%);
+}
 .plaza-char {
   position: absolute;
   bottom: 4px;

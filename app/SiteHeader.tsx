@@ -27,7 +27,7 @@ export default async function SiteHeader() {
 
         {user ? (
           <>
-            <Link href="/me" className="pts-chip" title="내 포인트">
+            <Link href="/me/shop" className="pts-chip" title="아바타 상점">
               🪙 {points.toLocaleString()}
             </Link>
             <Link className="btn btn-primary btn-sm" href="/wiki/new">
