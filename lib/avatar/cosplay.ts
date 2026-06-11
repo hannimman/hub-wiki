@@ -169,6 +169,21 @@ export const COSPLAY: Record<string, Item[]> = {
     },
   ],
 
+  handR: [
+    {
+      id: "hand-milkt-r", name: "밀크T 태블릿", price: 550,
+      svg: `<g transform="rotate(-16 230 234)">
+        <rect x="198" y="208" width="66" height="52" rx="9" fill="#1e9bf0" stroke="#0c5d9e" stroke-width="3.5"/>
+        <rect x="204" y="214" width="54" height="40" rx="6" fill="#3fb0ff" opacity="0.55"/>
+        <path d="M204 244 L258 222 L258 254 Q258 254 210 254 Z" fill="#1577c2" opacity="0.45"/>
+        <circle cx="256" cy="214.5" r="2" fill="#0c5d9e"/>
+        <text x="209" y="229" font-family="Arial, Helvetica, sans-serif" font-size="10.5" font-weight="bold" fill="#ffffff" letter-spacing="0.3">milk</text>
+        <rect x="232" y="219.5" width="11" height="11" rx="2.5" fill="#ffffff"/>
+        <text x="235" y="228.6" font-family="Arial, Helvetica, sans-serif" font-size="9.5" font-weight="bold" fill="#1e9bf0">T</text>
+      </g>`,
+    },
+  ],
+
   shoes: [
     {
       id: "cos-dm-shoes", name: "듬이 발", price: 250,
