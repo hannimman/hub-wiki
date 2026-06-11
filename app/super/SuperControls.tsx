@@ -292,7 +292,10 @@ export default function SuperControls({
             borderTop: "1px solid var(--border)",
           }}
         >
-          포인트 지급 {grantAmount < 0 ? "(음수 = 회수)" : ""}
+          포인트 지급 · 회수
+          <span className="muted" style={{ fontWeight: 400, fontSize: 12, marginLeft: 8 }}>
+            음수를 입력하면 회수됩니다
+          </span>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <select
