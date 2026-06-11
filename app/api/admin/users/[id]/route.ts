@@ -25,6 +25,10 @@ export async function PATCH(
     if (targetRole === "super" && !isSuper)
       throw new AuthError("슈퍼유저는 슈퍼유저만 관리할 수 있습니다.", 403);
 
+    // 관리자끼리는 서로 활성/비활성 변경 불가 (슈퍼유저만 가능)
+    if (targetRole === "admin" && !isSuper && "is_active" in fields)
+      throw new AuthError("관리자 계정의 활성 상태는 슈퍼유저만 변경할 수 있습니다.", 403);
+
     // 자기 자신 잠금 방지
     if (id === actor.id) {
       if ("role" in fields && fields.role !== "super")

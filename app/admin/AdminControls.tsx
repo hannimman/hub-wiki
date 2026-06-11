@@ -280,37 +280,42 @@ export default function AdminControls({
                     )}
                   </td>
                   <td style={td}>
-                    {!canManage ? (
+                    {isMe ? (
+                      <span style={{ color: "#999", fontSize: 12 }}>
+                        본인 계정
+                      </span>
+                    ) : !canManage ? (
                       <span style={{ color: "#999", fontSize: 12 }}>
                         관리 불가
                       </span>
                     ) : (
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {u.is_active ? (
-                          <button
-                            onClick={() => toggleActive(u.id, false)}
-                            disabled={isMe}
-                            style={{
-                              ...inputStyle,
-                              cursor: isMe ? "default" : "pointer",
-                              color: "#c62828",
-                            }}
-                          >
-                            비활성화
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => toggleActive(u.id, true)}
-                            style={{
-                              ...inputStyle,
-                              cursor: "pointer",
-                              color: "#22863a",
-                            }}
-                          >
-                            활성화
-                          </button>
-                        )}
-                        {!isMe && !u.needs_password_reset && (
+                        {/* 활성/비활성: 관리자끼리는 불가 — 슈퍼만 관리자 계정을 제어 */}
+                        {(isSuper || u.role === "member") &&
+                          (u.is_active ? (
+                            <button
+                              onClick={() => toggleActive(u.id, false)}
+                              style={{
+                                ...inputStyle,
+                                cursor: "pointer",
+                                color: "#c62828",
+                              }}
+                            >
+                              비활성화
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => toggleActive(u.id, true)}
+                              style={{
+                                ...inputStyle,
+                                cursor: "pointer",
+                                color: "#22863a",
+                              }}
+                            >
+                              활성화
+                            </button>
+                          ))}
+                        {!u.needs_password_reset && (
                           <button
                             onClick={() => resetPassword(u.id, u.display_name)}
                             style={{ ...inputStyle, cursor: "pointer" }}
