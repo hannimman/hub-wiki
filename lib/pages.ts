@@ -486,6 +486,47 @@ export async function softDeletePage(userId: string, pageId: string): Promise<vo
   if (error) throw new Error("삭제 실패: " + error.message);
 }
 
+// ── 작성자/기여자 ──
+export type UserBrief = {
+  id: string;
+  display_name: string;
+  avatar: string;
+  avatar_config: AvatarConfig | null;
+};
+
+// 최초 작성자 + 기여자(작성자 외 리비전을 남긴 사람들, 중복 제거)
+export async function getPageAuthors(
+  pageId: string,
+  createdBy: string | null
+): Promise<{ author: UserBrief | null; contributors: UserBrief[] }> {
+  const db = getAdminDb();
+  const { data } = await db
+    .from("page_revisions")
+    .select("users:author_id (id, display_name, avatar, avatar_config)")
+    .eq("page_id", pageId)
+    .limit(500);
+
+  const seen = new Map<string, UserBrief>();
+  for (const r of (data ?? []) as any[]) {
+    const u = r.users as UserBrief | null;
+    if (u && !seen.has(u.id)) seen.set(u.id, u);
+  }
+
+  let author = createdBy ? seen.get(createdBy) ?? null : null;
+  if (createdBy && !author) {
+    // 리비전이 전부 타인(복원 등)인 경우 작성자 정보 직접 조회
+    const { data: u } = await db
+      .from("users")
+      .select("id, display_name, avatar, avatar_config")
+      .eq("id", createdBy)
+      .maybeSingle();
+    author = (u as UserBrief) ?? null;
+  }
+
+  const contributors = [...seen.values()].filter((u) => u.id !== createdBy);
+  return { author, contributors };
+}
+
 export async function listRevisions(pageId: string): Promise<RevisionItem[]> {
   const db = getAdminDb();
   const { data, error } = await db

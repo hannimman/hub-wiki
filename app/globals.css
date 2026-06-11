@@ -767,6 +767,59 @@ a {
   }
 }
 
+/* ── 아바타 호버 풀착장 팝업 ── */
+.av-hover {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.av-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.96);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  z-index: 400;
+  pointer-events: none;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  padding: 6px;
+}
+.av-hover:hover .av-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scale(1);
+  transition-delay: 0.25s; /* 스쳐 지나갈 땐 안 뜨게 살짝 지연 */
+}
+.av-pop svg {
+  display: block;
+  border-radius: 8px;
+}
+
+/* ── 기여자 아바타 스택 (GitHub 스타일 겹침) ── */
+.contrib-stack {
+  display: inline-flex;
+  align-items: center;
+}
+.contrib-stack > span {
+  display: inline-flex;
+  margin-left: -7px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  transition: transform 0.12s;
+}
+.contrib-stack > span:first-child {
+  margin-left: 0;
+}
+.contrib-stack > span:hover {
+  transform: translateY(-2px);
+  z-index: 5;
+}
+
 /* ── 모달 ── */
 .modal-backdrop {
   position: fixed;

@@ -153,6 +153,37 @@ export function composeFullSvg(
     </g>`;
 }
 
+// ── 평면 전신 합성 (정적 미리보기 전용) ──
+// clipPath/defs 를 전혀 쓰지 않아 id 가 없다 → 호버 팝업처럼 한 페이지에
+// 무한 복제돼도 충돌이 없다. 하의/신발은 다리 분할 없이 통짜로 그린다(움직임 없음).
+export function composeFlatFullSvg(data: AvatarV2Data): string {
+  const eq = data.equipped ?? {};
+  const bgItem = findItem("background", eq["background"]);
+  const bg = bgItem ? bgItem.svg : DEFAULT_BG;
+  const top = topLayers(eq);
+  return `
+    ${bg}
+    ${layer("decoL", eq)}
+    ${layer("decoR", eq)}
+    <ellipse cx="160" cy="364" rx="84" ry="10" fill="#1d2433" opacity="0.10"/>
+    ${LEG_L}${LEG_R}
+    ${ARM_L}${ARM_R}
+    ${BODY_CORE}
+    ${layer("bottom", eq)}
+    ${layer("shoes", eq)}
+    ${top.torso}
+    ${top.sleeveL}${top.sleeveR}
+    <g class="eyes">${faceSvg(data, "eyes")}</g>
+    ${faceSvg(data, "nose")}
+    ${faceSvg(data, "mouth")}
+    ${layer("beard", eq)}
+    ${layer("faceAcc", eq)}
+    ${layer("hair", eq)}
+    ${layer("hat", eq)}
+    ${HAND_L}${layer("handL", eq)}
+    ${HAND_R}${layer("handR", eq)}`;
+}
+
 // ── 흉상 합성 (동그라미 프로필) — clipPath 불필요 레이어만 ──
 export function composeBustSvg(data: AvatarV2Data): string {
   const eq = data.equipped ?? {};

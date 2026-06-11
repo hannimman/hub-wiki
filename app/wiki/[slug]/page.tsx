@@ -5,8 +5,10 @@ import {
   getPageBySlug,
   getTitleSlugMap,
   getAncestors,
+  getPageAuthors,
   listTree,
 } from "@/lib/pages";
+import { Avatar } from "@/lib/avatars";
 import {
   getRatingsEnabled,
   getMyRating,
@@ -112,6 +114,10 @@ export default async function PageView({
 
   // ── 문서: 기존 글 보기 + (켜져 있으면) 평가 ──
   const linkMap = await getTitleSlugMap();
+  const { author, contributors } = await getPageAuthors(
+    page.id,
+    page.created_by
+  );
   const ratingsEnabled = await getRatingsEnabled();
   let rating: {
     pageId: string;
@@ -144,8 +150,33 @@ export default async function PageView({
       </div>
 
       <h1 style={{ marginTop: 8 }}>{page.title}</h1>
-      <div className="muted" style={{ fontSize: 13, marginBottom: 20 }}>
-        마지막 수정: {new Date(page.updated_at).toLocaleString("ko-KR")}
+      <div
+        className="row"
+        style={{ fontSize: 13, marginBottom: 20, flexWrap: "wrap", gap: 8 }}
+      >
+        {author && (
+          <span className="row" style={{ gap: 6 }}>
+            <Avatar id={author.avatar} config={author.avatar_config} size={24} />
+            <span>
+              ✍️ <b>{author.display_name}</b>
+            </span>
+          </span>
+        )}
+        {contributors.length > 0 && (
+          <span className="row" style={{ gap: 6 }}>
+            <span className="muted">· 기여자</span>
+            <span className="contrib-stack">
+              {contributors.map((c) => (
+                <span key={c.id} title={c.display_name}>
+                  <Avatar id={c.avatar} config={c.avatar_config} size={24} />
+                </span>
+              ))}
+            </span>
+          </span>
+        )}
+        <span className="muted">
+          · 마지막 수정 {new Date(page.updated_at).toLocaleString("ko-KR")}
+        </span>
       </div>
 
       <MarkdownView content={page.content} linkMap={linkMap} />
