@@ -2,8 +2,6 @@ import {
   isV2,
   AvatarBustV2,
   DEFAULT_AVATAR_V2,
-  composeFlatFullSvg,
-  VIEWBOX_FULL,
   type AvatarV2Data,
 } from "./avatar/render";
 
@@ -111,21 +109,10 @@ export function Avatar({
   size?: number;
 }) {
   // v2(레이어드 전신 아바타) 얼굴 크롭 흉상 — 동그라미 형태 유지.
-  // 레거시 데이터(프리셋/구 커스텀)는 더 이상 그리지 않고 v2 기본 모습으로 표시.
-  // 마우스 오버 시 풀착장(전신) 레이어 팝업 — flat 렌더(id 없음)라 페이지에 다수 떠도 안전.
-  const data = isV2(config) ? config : DEFAULT_AVATAR_V2;
+  // 호버 풀착장 팝업은 AvatarBustV2 에 내장(모든 사용처 자동 적용).
+  // 레거시 데이터(프리셋/구 커스텀)는 v2 기본 모습으로 표시.
   return (
-    <span className="av-hover" style={{ width: size, height: size }}>
-      <AvatarBustV2 data={data} size={size} />
-      <span className="av-pop" aria-hidden>
-        <svg
-          viewBox={VIEWBOX_FULL}
-          width={150}
-          height={188}
-          dangerouslySetInnerHTML={{ __html: composeFlatFullSvg(data) }}
-        />
-      </span>
-    </span>
+    <AvatarBustV2 data={isV2(config) ? config : DEFAULT_AVATAR_V2} size={size} />
   );
 }
 

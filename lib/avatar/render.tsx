@@ -205,6 +205,9 @@ export function composeBustSvg(data: AvatarV2Data): string {
 
 // ── React 컴포넌트 (서버/클라 공용 — 훅 없음) ──
 
+// 흉상(동그라미 아이콘). 마우스 오버 시 풀착장(전신) 레이어 팝업 내장 —
+// 어떤 화면에서 쓰든(기존·신규 전부) 자동으로 팝업이 따라온다.
+// 팝업은 flat 렌더(id 미사용)라 한 페이지에 다수 복제돼도 충돌 없음.
 export function AvatarBustV2({
   data,
   size = 32,
@@ -213,15 +216,25 @@ export function AvatarBustV2({
   size?: number;
 }) {
   return (
-    <svg
-      viewBox={VIEWBOX_BUST}
-      width={size}
-      height={size}
-      role="img"
-      aria-label="아바타"
-      style={{ borderRadius: "50%", background: "#eef4fb", flexShrink: 0 }}
-      dangerouslySetInnerHTML={{ __html: composeBustSvg(data) }}
-    />
+    <span className="av-hover" style={{ width: size, height: size }}>
+      <svg
+        viewBox={VIEWBOX_BUST}
+        width={size}
+        height={size}
+        role="img"
+        aria-label="아바타"
+        style={{ borderRadius: "50%", background: "#eef4fb", flexShrink: 0 }}
+        dangerouslySetInnerHTML={{ __html: composeBustSvg(data) }}
+      />
+      <span className="av-pop" aria-hidden>
+        <svg
+          viewBox={VIEWBOX_FULL}
+          width={150}
+          height={188}
+          dangerouslySetInnerHTML={{ __html: composeFlatFullSvg(data) }}
+        />
+      </span>
+    </span>
   );
 }
 
