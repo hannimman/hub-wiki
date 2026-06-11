@@ -7,6 +7,7 @@ import {
   DEFAULT_AVATAR_V2,
   type AvatarV2Data,
 } from "@/lib/avatar/render";
+import { getEffectiveCatalog } from "@/lib/avatar/catalog-db";
 import ShopClient from "./ShopClient";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,10 @@ export default async function ShopPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [points, owned] = await Promise.all([
+  const [points, owned, catalog] = await Promise.all([
     getPoints(user.id),
     listOwned(user.id),
+    getEffectiveCatalog(), // 기본 + DB 오버라이드/커스텀 병합본
   ]);
 
   // 레거시 아바타 유저는 v2 기본값으로 시작 (저장하면 v2 로 전환)
@@ -41,6 +43,7 @@ export default async function ShopPage() {
         initialData={data}
         initialOwned={owned}
         initialPoints={points}
+        catalogBySlot={catalog.bySlot}
       />
     </main>
   );

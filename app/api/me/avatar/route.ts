@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser, AuthError } from "@/lib/auth";
 import { getAdminDb } from "@/lib/db";
 import { sanitizeAvatarV2 } from "@/lib/avatar/render";
+import { loadAndRegisterExtras } from "@/lib/avatar/catalog-db";
 import { listOwned } from "@/lib/points";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export async function PATCH(req: Request) {
     if (!body) throw new AuthError("잘못된 요청입니다.", 400);
 
     const avatar = "v2";
+    await loadAndRegisterExtras(); // 커스텀 아이템도 카탈로그 검증을 통과하도록 등록
     const owned = new Set(await listOwned(user.id));
     const avatarConfig = sanitizeAvatarV2(body.avatarConfig, owned);
 

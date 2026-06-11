@@ -977,10 +977,33 @@ for (const [slotId, items] of Object.entries(COSPLAY)) {
   (ITEMS[slotId] = ITEMS[slotId] || []).push(...items);
 }
 
+// ── 커스텀 아이템(DB 등록) 런타임 레지스트리 ──
+// 기본 카탈로그는 코드 상수, 슈퍼가 등록한 커스텀 아이템은 서버(layout)와
+// 클라이언트(CatalogExtras)에서 이 레지스트리에 주입돼 렌더에 합류한다.
+export type ExtraItem = AvatarItem & { slotId: string };
+const EXTRA: Record<string, { slotId: string; item: AvatarItem }> = {};
+
+export function registerExtraItems(items: ExtraItem[]): void {
+  for (const e of items) {
+    EXTRA[e.id] = {
+      slotId: e.slotId,
+      item: { id: e.id, name: e.name, price: e.price, svg: e.svg, rigid: e.rigid },
+    };
+  }
+}
+export function getExtraItems(slotId: string): AvatarItem[] {
+  return Object.values(EXTRA)
+    .filter((x) => x.slotId === slotId)
+    .map((x) => x.item);
+}
+
 // ── 파생 헬퍼 ──
 export function findItem(slotId: string, itemId: string | null | undefined): AvatarItem | null {
   if (!itemId) return null;
-  return (ITEMS[slotId] || []).find((it) => it.id === itemId) ?? null;
+  const builtin = (ITEMS[slotId] || []).find((it) => it.id === itemId) ?? null;
+  if (builtin) return builtin;
+  const extra = EXTRA[itemId];
+  return extra && extra.slotId === slotId ? extra.item : null;
 }
 export function findFace(part: string, optionId: string | null | undefined): FaceOption | null {
   if (!optionId) return null;

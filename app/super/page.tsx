@@ -22,6 +22,20 @@ export default async function SuperPage() {
       <h1>🦸 슈퍼 제어판</h1>
       <p style={{ margin: "0 0 16px" }}>
         <Link
+          href="/super/items"
+          style={{
+            display: "inline-block",
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            textDecoration: "none",
+            color: "#333",
+            marginRight: 8,
+          }}
+        >
+          🎒 아이템 관리 (등록 · 비활성 · 가격) →
+        </Link>
+        <Link
           href="/admin"
           style={{
             display: "inline-block",

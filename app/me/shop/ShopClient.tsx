@@ -28,10 +28,13 @@ export default function ShopClient({
   initialData,
   initialOwned,
   initialPoints,
+  catalogBySlot,
 }: {
   initialData: AvatarV2Data;
   initialOwned: string[];
   initialPoints: number;
+  // 유효 카탈로그(기본 + DB 오버라이드/커스텀). 비활성 아이템은 보유자만 인벤토리에서 봄.
+  catalogBySlot?: Record<string, (AvatarItem & { active?: boolean })[]>;
 }) {
   const router = useRouter();
   const [data, setData] = useState<AvatarV2Data>(initialData);
@@ -46,6 +49,10 @@ export default function ShopClient({
   const stageRef = useRef<HTMLDivElement>(null);
 
   const previewing = Object.keys(preview).length > 0;
+
+  // 슬롯별 유효 아이템 (prop 미전달 시 기본 카탈로그 폴백)
+  const effItems = (slotId: string): (AvatarItem & { active?: boolean })[] =>
+    catalogBySlot?.[slotId] ?? ITEMS[slotId] ?? [];
 
   function showToast(msg: string) {
     setToast(msg);
@@ -191,7 +198,7 @@ export default function ShopClient({
   }
 
   const ownedCount = (slotId: string) =>
-    (ITEMS[slotId] || []).filter((i) => owned.has(i.id)).length;
+    effItems(slotId).filter((i) => owned.has(i.id)).length;
 
   // ── 탭 본문 ──
   function renderFaceTab() {
@@ -288,7 +295,9 @@ export default function ShopClient({
           ))}
         </div>
         <div className="shop-grid">
-          {(ITEMS[slot.id] || []).map((item) => itemCard(slot, item, "shop"))}
+          {effItems(slot.id)
+            .filter((i) => i.active !== false || owned.has(i.id))
+            .map((item) => itemCard(slot, item, "shop"))}
         </div>
       </>
     );
@@ -299,7 +308,7 @@ export default function ShopClient({
       invSlot === "all" ? SLOTS : SLOTS.filter((s) => s.id === invSlot);
     const sections = slots
       .map((slot) => {
-        const items = (ITEMS[slot.id] || []).filter((i) => owned.has(i.id));
+        const items = effItems(slot.id).filter((i) => owned.has(i.id));
         if (items.length === 0) return null;
         return (
           <div key={slot.id}>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser, AuthError } from "@/lib/auth";
 import { getAdminDb } from "@/lib/db";
-import { ITEM_INDEX } from "@/lib/avatar/catalog";
+import { getEffectiveCatalog } from "@/lib/avatar/catalog-db";
 import { isV2, DEFAULT_AVATAR_V2, type AvatarV2Data } from "@/lib/avatar/render";
 import { buyItem, getPoints } from "@/lib/points";
 
@@ -17,10 +17,14 @@ export async function POST(req: Request) {
       throw new AuthError("잘못된 요청입니다.", 400);
 
     const itemId = String(body.itemId ?? "").trim();
-    const entry = ITEM_INDEX[itemId];
+    // 가격·활성은 유효 카탈로그(기본 + DB 오버라이드/커스텀)에서 확정
+    const { index } = await getEffectiveCatalog();
+    const entry = index[itemId];
     if (!entry) throw new AuthError("존재하지 않는 아이템입니다.", 404);
+    if (!entry.active)
+      throw new AuthError("판매가 중단된 아이템입니다.", 400);
 
-    const result = await buyItem(user.id, itemId, entry.item.price);
+    const result = await buyItem(user.id, itemId, entry.price);
     if (result === "owned")
       throw new AuthError("이미 보유한 아이템입니다.", 409);
     if (result === "insufficient")

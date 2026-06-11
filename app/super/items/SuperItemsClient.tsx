@@ -1,0 +1,239 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { AvatarItem } from "@/lib/avatar/catalog";
+
+// 슈퍼 아이템 관리 — 슬롯별 목록(가격/활성 인라인 수정) + 커스텀 아이템 등록(미리보기).
+type Eff = AvatarItem & { slotId: string; active: boolean; custom: boolean };
+
+export default function SuperItemsClient({
+  slots,
+  bySlot,
+}: {
+  slots: { id: string; name: string }[];
+  bySlot: Record<string, Eff[]>;
+}) {
+  const router = useRouter();
+  const [slot, setSlot] = useState(slots[0]?.id ?? "hair");
+  const [busy, setBusy] = useState<string | null>(null);
+  // 가격 입력 로컬 상태 (id → 문자열)
+  const [prices, setPrices] = useState<Record<string, string>>({});
+
+  // 커스텀 등록 폼
+  const [showCreate, setShowCreate] = useState(false);
+  const [cSlot, setCSlot] = useState("hat");
+  const [cName, setCName] = useState("");
+  const [cPrice, setCPrice] = useState("300");
+  const [cSvg, setCSvg] = useState("");
+  const [cRigid, setCRigid] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  async function post(body: Record<string, unknown>, busyKey: string) {
+    setBusy(busyKey);
+    const res = await fetch("/api/super/items", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    setBusy(null);
+    if (res.ok) {
+      router.refresh();
+      return true;
+    }
+    const d = await res.json().catch(() => ({}));
+    alert(d.error ?? "저장에 실패했습니다.");
+    return false;
+  }
+
+  async function savePrice(it: Eff) {
+    const raw = prices[it.id];
+    if (raw === undefined || raw === "") return;
+    await post({ id: it.id, price: Math.trunc(Number(raw)) }, it.id);
+  }
+
+  async function createItem() {
+    if (!cName.trim() || !cSvg.trim()) {
+      alert("이름과 SVG 코드를 입력하세요.");
+      return;
+    }
+    setCreating(true);
+    const ok = await post(
+      { create: true, slot: cSlot, name: cName, price: cPrice, svg: cSvg, rigid: cRigid },
+      "create"
+    );
+    setCreating(false);
+    if (ok) {
+      setShowCreate(false);
+      setCName("");
+      setCSvg("");
+    }
+  }
+
+  const items = bySlot[slot] ?? [];
+
+  return (
+    <div>
+      <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+        <select
+          value={slot}
+          onChange={(e) => setSlot(e.target.value)}
+          style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", fontSize: 14 }}
+        >
+          {slots.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} ({(bySlot[s.id] ?? []).length})
+            </option>
+          ))}
+        </select>
+        <button className="btn btn-sm" onClick={() => setShowCreate((v) => !v)}>
+          {showCreate ? "등록 닫기" : "＋ 커스텀 아이템 등록"}
+        </button>
+      </div>
+
+      {showCreate && (
+        <div className="card" style={{ margin: "12px 0", padding: 14 }}>
+          <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+            <select
+              value={cSlot}
+              onChange={(e) => setCSlot(e.target.value)}
+              style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", fontSize: 13 }}
+            >
+              {slots.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+            <input
+              placeholder="이름"
+              value={cName}
+              maxLength={40}
+              onChange={(e) => setCName(e.target.value)}
+              style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", fontSize: 13 }}
+            />
+            <input
+              type="text"
+              inputMode="numeric"
+              value={cPrice}
+              onChange={(e) => /^\d*$/.test(e.target.value) && setCPrice(e.target.value)}
+              style={{ width: 90, padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", fontSize: 13, textAlign: "right" }}
+            />
+            <span style={{ color: "#b45309", fontWeight: 700 }}>P</span>
+            <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+              <input type="checkbox" checked={cRigid} onChange={(e) => setCRigid(e.target.checked)} />
+              rigid(관절 분리 안 함)
+            </label>
+          </div>
+          <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
+            <textarea
+              placeholder='SVG 조각 (viewBox 0 0 320 400 좌표계, id 속성 금지) — 예: <circle cx="160" cy="80" r="20" fill="#f00"/>'
+              value={cSvg}
+              onChange={(e) => setCSvg(e.target.value)}
+              style={{
+                flex: 1, minWidth: 280, minHeight: 140, padding: 10,
+                borderRadius: 8, border: "1px solid var(--border)",
+                fontFamily: "monospace", fontSize: 12,
+              }}
+            />
+            <div style={{ textAlign: "center" }}>
+              <svg
+                viewBox="0 0 320 400"
+                width={120}
+                height={150}
+                style={{ border: "1px dashed var(--border)", borderRadius: 8, background: "#fafbfc" }}
+                dangerouslySetInnerHTML={{
+                  __html:
+                    `<circle cx="160" cy="120" r="56" fill="#f4e1cf" opacity="0.45"/>
+                     <path d="M124 176 Q160 164 196 176 L199 268 Q160 280 121 268 Z" fill="#f4e1cf" opacity="0.45"/>` +
+                    cSvg,
+                }}
+              />
+              <div className="muted" style={{ fontSize: 11 }}>실시간 미리보기</div>
+            </div>
+          </div>
+          <button
+            className="btn btn-primary btn-sm"
+            style={{ marginTop: 10 }}
+            onClick={createItem}
+            disabled={creating}
+          >
+            {creating ? "등록 중…" : "등록"}
+          </button>
+        </div>
+      )}
+
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}>
+        <thead>
+          <tr>
+            {["미리보기", "이름", "가격", "상태", ""].map((h) => (
+              <th
+                key={h}
+                style={{
+                  textAlign: "left", padding: "8px 10px", fontSize: 13,
+                  color: "var(--muted)", borderBottom: "1px solid var(--border)",
+                }}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((it) => (
+            <tr key={it.id} style={it.active ? undefined : { opacity: 0.5 }}>
+              <td style={{ padding: "6px 10px", borderBottom: "1px solid var(--border)" }}>
+                <svg
+                  viewBox="0 0 320 400"
+                  width={44}
+                  height={55}
+                  style={{ background: "#fafbfc", borderRadius: 6 }}
+                  dangerouslySetInnerHTML={{ __html: it.svg }}
+                />
+              </td>
+              <td style={{ padding: "6px 10px", borderBottom: "1px solid var(--border)", fontSize: 14 }}>
+                <b>{it.name}</b>{" "}
+                {it.custom && (
+                  <span style={{ fontSize: 11, padding: "1px 6px", borderRadius: 999, background: "#ede9fe", color: "#6d28d9" }}>
+                    커스텀
+                  </span>
+                )}
+                <div className="muted" style={{ fontSize: 11 }}>{it.id}</div>
+              </td>
+              <td style={{ padding: "6px 10px", borderBottom: "1px solid var(--border)" }}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={prices[it.id] ?? String(it.price)}
+                  onChange={(e) =>
+                    /^\d*$/.test(e.target.value) &&
+                    setPrices((p) => ({ ...p, [it.id]: e.target.value }))
+                  }
+                  onBlur={() => {
+                    if (prices[it.id] !== undefined && prices[it.id] !== String(it.price))
+                      savePrice(it);
+                  }}
+                  style={{ width: 80, padding: "5px 8px", borderRadius: 7, border: "1px solid var(--border)", fontSize: 13, textAlign: "right" }}
+                />{" "}
+                P
+              </td>
+              <td style={{ padding: "6px 10px", borderBottom: "1px solid var(--border)" }}>
+                <button
+                  className="btn btn-sm"
+                  disabled={busy === it.id}
+                  onClick={() => post({ id: it.id, active: !it.active }, it.id)}
+                  style={it.active ? undefined : { color: "#c62828" }}
+                >
+                  {busy === it.id ? "…" : it.active ? "✅ 판매중" : "⛔ 비활성"}
+                </button>
+              </td>
+              <td style={{ padding: "6px 10px", borderBottom: "1px solid var(--border)", fontSize: 12 }} className="muted">
+                {prices[it.id] !== undefined && prices[it.id] !== String(it.price)
+                  ? "포커스 아웃 시 저장"
+                  : ""}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
