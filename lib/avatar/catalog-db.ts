@@ -31,8 +31,8 @@ export type EffectiveItem = AvatarItem & {
 let cache: { at: number; rows: ShopItemRow[] } | null = null;
 const TTL_MS = 60_000;
 
-async function loadRows(): Promise<ShopItemRow[]> {
-  if (cache && Date.now() - cache.at < TTL_MS) return cache.rows;
+async function loadRows(force = false): Promise<ShopItemRow[]> {
+  if (!force && cache && Date.now() - cache.at < TTL_MS) return cache.rows;
   const db = getAdminDb();
   const { data, error } = await db
     .from("shop_items")
@@ -51,11 +51,14 @@ export function invalidateItemCache(): void {
   cache = null;
 }
 
-export async function getEffectiveCatalog(): Promise<{
+// opts.fresh: TTL 캐시를 건너뛰고 항상 DB에서 읽는다.
+// (관리 화면용 — dev/서버리스에서 라우트별 모듈 인스턴스가 분리되면
+//  invalidateItemCache 가 다른 인스턴스의 캐시를 못 비우기 때문)
+export async function getEffectiveCatalog(opts?: { fresh?: boolean }): Promise<{
   bySlot: Record<string, EffectiveItem[]>;
   index: Record<string, EffectiveItem>;
 }> {
-  const rows = await loadRows();
+  const rows = await loadRows(opts?.fresh === true);
   const overrides = new Map(rows.filter((r) => !r.custom).map((r) => [r.id, r]));
 
   const bySlot: Record<string, EffectiveItem[]> = {};

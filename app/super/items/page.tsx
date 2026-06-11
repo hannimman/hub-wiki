@@ -13,7 +13,8 @@ export default async function SuperItemsPage() {
   if (!user) redirect("/login");
   if (user.role !== "super") redirect("/");
 
-  const { bySlot } = await getEffectiveCatalog();
+  // 관리 화면은 항상 신선하게 — 토글/가격 변경이 즉시 보여야 한다
+  const { bySlot } = await getEffectiveCatalog({ fresh: true });
 
   return (
     <main className="container page">
