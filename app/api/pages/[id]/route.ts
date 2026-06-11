@@ -106,6 +106,19 @@ export async function DELETE(
       );
 
     await softDeletePage(user.id, id);
+
+    // 문서 삭제 포인트 (슈퍼가 음수로 설정하면 차감, 기본 0 = 없음. 폴더는 제외)
+    if (!page.is_folder) {
+      try {
+        const cfg = await getPointConfig();
+        if (cfg.deleteDoc !== 0) {
+          await award(user.id, cfg.deleteDoc, "delete_doc", id);
+        }
+      } catch (e) {
+        console.error("delete doc points failed", e);
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e instanceof AuthError)

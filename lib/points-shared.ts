@@ -9,6 +9,7 @@ export const POINTS = {
   edit: 5,
   ratingReceived: 2,
   ratingGiven: 3,
+  deleteDoc: 0, // 문서 삭제 — 음수로 설정하면 차감(기본 0 = 차감 없음)
 } as const;
 
 export type PointConfig = {
@@ -18,7 +19,13 @@ export type PointConfig = {
   edit: number;
   ratingReceived: number;
   ratingGiven: number;
+  deleteDoc: number;
 };
+
+// 음수 허용 항목 (차감용)
+export const NEGATIVE_ALLOWED: ReadonlySet<keyof PointConfig> = new Set([
+  "deleteDoc",
+] as (keyof PointConfig)[]);
 
 export const POINT_CONFIG_LABEL: Record<keyof PointConfig, string> = {
   signup: "가입 보너스",
@@ -27,6 +34,7 @@ export const POINT_CONFIG_LABEL: Record<keyof PointConfig, string> = {
   edit: "문서 수정 (문서당 하루 1회, 총 5회까지)",
   ratingReceived: "평가 받음 (건당)",
   ratingGiven: "평가 참여 (건당, 하루 10회까지)",
+  deleteDoc: "문서 삭제 (음수 입력 = 차감)",
 };
 
 // 하루 캡(남용 방지)
@@ -44,6 +52,7 @@ export const REASON_LABEL: Record<string, string> = {
   edit: "문서 수정",
   rating_received: "평가 받음",
   rating_given: "평가 참여",
+  delete_doc: "문서 삭제",
   buy: "상점 구매",
   grant: "슈퍼 지급",
   event: "이벤트 지급",

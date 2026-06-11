@@ -115,7 +115,7 @@ export async function getPageId(pageId: string) {
   const db = getAdminDb();
   const { data } = await db
     .from("pages")
-    .select("id, slug, is_deleted, current_revision_id")
+    .select("id, slug, is_deleted, is_folder, current_revision_id")
     .eq("id", pageId)
     .maybeSingle();
   if (!data || data.is_deleted) return null;

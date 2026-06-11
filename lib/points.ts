@@ -1,5 +1,11 @@
 import { getAdminDb } from "./db";
-import { POINTS, type PointConfig } from "./points-shared";
+import { POINTS, NEGATIVE_ALLOWED, type PointConfig } from "./points-shared";
+
+// 항목별 허용 범위 (차감 항목만 음수 허용)
+function clampPoint(k: keyof PointConfig, v: number): number {
+  const lo = NEGATIVE_ALLOWED.has(k) ? -100000 : 0;
+  return Math.max(lo, Math.min(100000, Math.trunc(v)));
+}
 
 // 공용 상수/타입은 points-shared.ts (클라이언트도 import 가능). 여기서 re-export.
 export {
@@ -23,7 +29,7 @@ export async function getPointConfig(): Promise<PointConfig> {
   for (const k of Object.keys(merged) as (keyof PointConfig)[]) {
     const v = saved[k];
     if (typeof v === "number" && Number.isFinite(v)) {
-      merged[k] = Math.max(0, Math.min(100000, Math.trunc(v)));
+      merged[k] = clampPoint(k, v);
     }
   }
   return merged;
@@ -38,7 +44,7 @@ export async function setPointConfig(
   for (const k of Object.keys(POINTS) as (keyof PointConfig)[]) {
     const v = input[k];
     if (typeof v === "number" && Number.isFinite(v)) {
-      next[k] = Math.max(0, Math.min(100000, Math.trunc(v)));
+      next[k] = clampPoint(k, v);
     }
   }
   const db = getAdminDb();

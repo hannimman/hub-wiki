@@ -6,6 +6,7 @@ import { Avatar } from "@/lib/avatars";
 import type { AdminUser } from "@/lib/admin";
 import {
   POINT_CONFIG_LABEL,
+  NEGATIVE_ALLOWED,
   type PointConfig,
 } from "@/lib/points-shared";
 
@@ -250,7 +251,7 @@ export default function SuperControls({
                 <span style={{ flex: 1 }}>{POINT_CONFIG_LABEL[k]}</span>
                 <input
                   type="number"
-                  min={0}
+                  min={NEGATIVE_ALLOWED.has(k) ? -100000 : 0}
                   max={100000}
                   value={cfg[k]}
                   onChange={(e) => {
