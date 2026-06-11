@@ -22,6 +22,7 @@ type PageRow = {
   title: string;
   is_folder: boolean;
   is_deleted: boolean;
+  is_private: boolean;
   created_by: string | null;
   updated_at: string;
   current_revision_id: string | null;
@@ -39,7 +40,7 @@ async function fetchBase() {
     db
       .from("pages")
       .select(
-        "id, slug, title, is_folder, is_deleted, created_by, updated_at, current_revision_id"
+        "id, slug, title, is_folder, is_deleted, is_private, created_by, updated_at, current_revision_id"
       )
       .limit(PAGE_LIMIT),
     db
@@ -80,7 +81,7 @@ export type ActivityRow = {
 
 export async function getUserActivitySummary(): Promise<ActivityRow[]> {
   const { users, pages, revs, ratings } = await fetchBase();
-  const liveDocs = pages.filter((p) => !p.is_deleted && !p.is_folder);
+  const liveDocs = pages.filter((p) => !p.is_deleted && !p.is_folder && !p.is_private);
   const creatorOf = new Map(pages.map((p) => [p.id, p.created_by]));
   const liveDocIds = new Set(liveDocs.map((p) => p.id));
   const agg = ratingAggByPage(ratings);
@@ -147,7 +148,7 @@ export async function getUserActivityDetail(userId: string): Promise<{
   const { users, pages, revs, ratings } = await fetchBase();
   const nameOf = new Map(users.map((u) => [u.id, u.display_name]));
   const agg = ratingAggByPage(ratings);
-  const liveDocs = pages.filter((p) => !p.is_deleted && !p.is_folder);
+  const liveDocs = pages.filter((p) => !p.is_deleted && !p.is_folder && !p.is_private);
 
   const authored: AuthoredPage[] = liveDocs
     .filter((p) => p.created_by === userId)
@@ -210,7 +211,7 @@ export async function getRatingsOverview(): Promise<RatingsOverview> {
   const { users, pages, ratings } = await fetchBase();
   const nameOf = new Map(users.map((u) => [u.id, u.display_name]));
   const agg = ratingAggByPage(ratings);
-  const liveDocs = pages.filter((p) => !p.is_deleted && !p.is_folder);
+  const liveDocs = pages.filter((p) => !p.is_deleted && !p.is_folder && !p.is_private);
 
   const pageRows = liveDocs
     .filter((p) => agg.has(p.id))
@@ -270,7 +271,7 @@ export type ContentHealth = {
 export async function getContentHealth(staleDays = 90): Promise<ContentHealth> {
   const db = getAdminDb();
   const { pages, ratings } = await fetchBase();
-  const liveDocs = pages.filter((p) => !p.is_deleted && !p.is_folder);
+  const liveDocs = pages.filter((p) => !p.is_deleted && !p.is_folder && !p.is_private);
   const rated = new Set(ratings.map((r) => r.page_id));
 
   const cutoff = new Date(Date.now() - staleDays * 86400_000).toISOString();

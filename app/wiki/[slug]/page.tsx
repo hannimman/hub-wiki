@@ -7,6 +7,7 @@ import {
   getAncestors,
   getPageAuthors,
   listTree,
+  canViewPage,
 } from "@/lib/pages";
 import {
   isV2,
@@ -66,6 +67,7 @@ export default async function PageView({
   const { slug } = await params;
   const page = await getPageBySlug(slug);
   if (!page) notFound();
+  if (!canViewPage(page, user.id)) notFound(); // 비공개 글은 작성자만
   const ancestors = await getAncestors(page.id);
 
   // ── 폴더: 본문/평가 없이 하위 목록만 ──
@@ -172,10 +174,34 @@ export default async function PageView({
     <main style={wrap}>
       <div className="row-between">
         <Breadcrumb ancestors={ancestors} />
-        <PageActions pageId={page.id} slug={page.slug} />
+        <PageActions
+          pageId={page.id}
+          slug={page.slug}
+          isAuthor={page.created_by === user.id}
+          isPrivate={page.is_private}
+        />
       </div>
 
-      <h1 style={{ marginTop: 8 }}>{page.title}</h1>
+      <h1 style={{ marginTop: 8 }}>
+        {page.is_private && (
+          <span
+            title="비공개 글 — 본인만 볼 수 있습니다"
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              verticalAlign: "middle",
+              marginRight: 8,
+              padding: "3px 10px",
+              borderRadius: 999,
+              background: "#fef3c7",
+              color: "#92400e",
+            }}
+          >
+            🔒 비공개
+          </span>
+        )}
+        {page.title}
+      </h1>
 
       <WikiPlaza
         members={crew}

@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { getPageBySlug, listParentOptions } from "@/lib/pages";
+import { getPageBySlug, listParentOptions, canViewPage } from "@/lib/pages";
 import { getRatingsEnabled } from "@/lib/ratings";
 import PageEditor from "../../PageEditor";
 
@@ -17,6 +17,7 @@ export default async function EditPage({
   const { slug } = await params;
   const page = await getPageBySlug(slug);
   if (!page) notFound();
+  if (!canViewPage(page, user.id)) notFound(); // 비공개 글은 작성자만
   const ratingsAllowed = await getRatingsEnabled();
   // 자기 자신과 하위 문서는 상위 폴더 후보에서 제외(순환 방지)
   const parentOptions = await listParentOptions(page.id);

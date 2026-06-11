@@ -80,10 +80,11 @@ export async function submitRating(
   const db = getAdminDb();
   const { data: page } = await db
     .from("pages")
-    .select("created_by, is_deleted")
+    .select("created_by, is_deleted, is_private")
     .eq("id", pageId)
     .maybeSingle();
-  if (!page || page.is_deleted) {
+  if (!page || page.is_deleted || page.is_private) {
+    // 비공개 글은 작성자만 보는데 작성자는 본인 글 평가 불가 → 사실상 평가 차단
     throw new AuthError("문서를 찾을 수 없습니다.", 404);
   }
   if (page.created_by === user.id) {

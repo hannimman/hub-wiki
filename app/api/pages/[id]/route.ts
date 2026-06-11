@@ -5,6 +5,7 @@ import {
   updatePage,
   softDeletePage,
   hasChildren,
+  canViewPage,
 } from "@/lib/pages";
 import {
   award,
@@ -27,6 +28,8 @@ export async function PATCH(
 
     const page = await getPageId(id);
     if (!page) throw new AuthError("문서를 찾을 수 없습니다.", 404);
+    if (!canViewPage(page, user.id))
+      throw new AuthError("문서를 찾을 수 없습니다.", 404); // 비공개 글은 작성자만
 
     const body = await req.json().catch(() => null);
     if (!body) throw new AuthError("잘못된 요청입니다.", 400);
@@ -97,6 +100,8 @@ export async function DELETE(
 
     const page = await getPageId(id);
     if (!page) throw new AuthError("문서를 찾을 수 없습니다.", 404);
+    if (!canViewPage(page, user.id))
+      throw new AuthError("문서를 찾을 수 없습니다.", 404); // 비공개 글은 작성자만
 
     // 하위 문서가 있는 폴더는 삭제 차단 (먼저 옮기거나 삭제하도록)
     if (await hasChildren(id))

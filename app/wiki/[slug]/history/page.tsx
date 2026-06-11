@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { getPageBySlug, listRevisions } from "@/lib/pages";
+import { getPageBySlug, listRevisions, canViewPage } from "@/lib/pages";
 import { Avatar } from "@/lib/avatars";
 import RestoreButton from "../RestoreButton";
 
@@ -18,6 +18,7 @@ export default async function HistoryPage({
   const { slug } = await params;
   const page = await getPageBySlug(slug);
   if (!page) notFound();
+  if (!canViewPage(page, user.id)) notFound(); // 비공개 글은 작성자만
 
   const revisions = await listRevisions(page.id);
 

@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { diffLines } from "diff";
 import { getCurrentUser } from "@/lib/auth";
-import { getPageBySlug, getRevisionForDiff } from "@/lib/pages";
+import { getPageBySlug, getRevisionForDiff, canViewPage } from "@/lib/pages";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,7 @@ export default async function RevDiffPage({
   const { slug, revId } = await params;
   const page = await getPageBySlug(slug);
   if (!page) notFound();
+  if (!canViewPage(page, user.id)) notFound(); // 비공개 글은 작성자만
 
   const data = await getRevisionForDiff(page.id, revId);
   if (!data) notFound();

@@ -24,7 +24,16 @@ export type PageDetail = {
   updated_at: string;
   content: string;
   ratings_enabled: boolean;
+  is_private: boolean;
 };
+
+// 비공개 글 접근 규칙: 작성자만 볼 수 있다.
+export function canViewPage(
+  page: { is_private?: boolean | null; created_by?: string | null },
+  viewerId: string
+): boolean {
+  return !page.is_private || page.created_by === viewerId;
+}
 
 export type RevisionItem = {
   id: string;
@@ -65,13 +74,23 @@ export async function listPages(query?: string): Promise<PageListItem[]> {
   if (term) {
     const { data, error } = await db.rpc("search_pages", { q: term });
     if (error) throw new Error("검색 실패: " + error.message);
-    return (data ?? []) as PageListItem[];
+    const rows = (data ?? []) as PageListItem[];
+    // 검색 RPC(0005)는 비공개를 모름 → 결과에서 비공개 글 제외
+    if (rows.length === 0) return rows;
+    const { data: privs } = await db
+      .from("pages")
+      .select("id")
+      .in("id", rows.map((r) => r.id))
+      .eq("is_private", true);
+    const privateIds = new Set((privs ?? []).map((p) => (p as any).id));
+    return rows.filter((r) => !privateIds.has(r.id));
   }
 
   const { data, error } = await db
     .from("pages")
     .select("id, slug, title, updated_at")
     .eq("is_deleted", false)
+    .eq("is_private", false)
     .order("updated_at", { ascending: false })
     .limit(500);
   if (error) throw new Error("문서 목록 조회 실패: " + error.message);
@@ -83,7 +102,7 @@ export async function getPageBySlug(slug: string): Promise<PageDetail | null> {
   const { data: page } = await db
     .from("pages")
     .select(
-      "id, slug, title, parent_id, is_folder, current_revision_id, created_by, is_deleted, updated_at, ratings_enabled"
+      "id, slug, title, parent_id, is_folder, current_revision_id, created_by, is_deleted, is_private, updated_at, ratings_enabled"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -111,6 +130,7 @@ export async function getPageBySlug(slug: string): Promise<PageDetail | null> {
     updated_at: page.updated_at,
     content,
     ratings_enabled: page.ratings_enabled ?? false,
+    is_private: (page as { is_private?: boolean }).is_private ?? false,
   };
 }
 
@@ -118,7 +138,7 @@ export async function getPageId(pageId: string) {
   const db = getAdminDb();
   const { data } = await db
     .from("pages")
-    .select("id, slug, is_deleted, is_folder, current_revision_id")
+    .select("id, slug, is_deleted, is_folder, current_revision_id, created_by, is_private")
     .eq("id", pageId)
     .maybeSingle();
   if (!data || data.is_deleted) return null;
@@ -132,6 +152,7 @@ export async function getTitleSlugMap(): Promise<Record<string, string>> {
     .from("pages")
     .select("slug, title")
     .eq("is_deleted", false)
+    .eq("is_private", false)
     .limit(2000);
   const map: Record<string, string> = {};
   for (const p of data ?? []) map[(p as any).title] = (p as any).slug;
@@ -157,6 +178,7 @@ export async function listTree(): Promise<PageTreeNode[]> {
     .from("pages")
     .select("id, slug, title, parent_id, is_folder, updated_at")
     .eq("is_deleted", false)
+    .eq("is_private", false)
     .order("is_folder", { ascending: false })
     .order("title", { ascending: true })
     .limit(2000);
@@ -522,6 +544,50 @@ export async function softDeletePage(userId: string, pageId: string): Promise<vo
   await insertAuditRevision(pageId, userId, "🗑 문서 삭제");
 }
 
+// ── 비공개 글 ─────────────────────────────
+// 작성자 본인만 전환 가능(폴더 제외). 비공개면 모든 리스트에서 숨고
+// 본문도 작성자 외 접근 불가. 해제 시 즉시 모든 곳에 다시 보인다.
+export async function setPagePrivacy(
+  userId: string,
+  pageId: string,
+  isPrivate: boolean
+): Promise<void> {
+  const db = getAdminDb();
+  const { data: page } = await db
+    .from("pages")
+    .select("id, created_by, is_folder, is_deleted")
+    .eq("id", pageId)
+    .maybeSingle();
+  if (!page || page.is_deleted)
+    throw new AuthError("문서를 찾을 수 없습니다.", 404);
+  if (page.is_folder)
+    throw new AuthError("폴더는 비공개로 전환할 수 없습니다.", 400);
+  if (page.created_by !== userId)
+    throw new AuthError("본인이 작성한 글만 비공개로 전환할 수 있습니다.", 403);
+
+  const { error } = await db
+    .from("pages")
+    .update({ is_private: isPrivate })
+    .eq("id", pageId);
+  if (error) throw new Error("비공개 설정 실패: " + error.message);
+}
+
+// 마이페이지용 — 내 비공개 글 목록 (리스트에서 숨는 글을 본인이 찾는 유일한 통로)
+export async function listMyPrivatePages(
+  userId: string
+): Promise<PageListItem[]> {
+  const db = getAdminDb();
+  const { data } = await db
+    .from("pages")
+    .select("id, slug, title, updated_at")
+    .eq("is_deleted", false)
+    .eq("is_private", true)
+    .eq("created_by", userId)
+    .order("updated_at", { ascending: false })
+    .limit(200);
+  return (data ?? []) as PageListItem[];
+}
+
 // ── 휴지통 ─────────────────────────────
 // 휴지통은 DB 폴더가 아니라 가상 노드: is_deleted 행의 목록일 뿐이다.
 export type TrashItem = {
@@ -727,13 +793,15 @@ export async function listRecentChanges(): Promise<RecentChange[]> {
   const { data, error } = await db
     .from("page_revisions")
     .select(
-      "id, page_id, summary, created_at, pages:page_id (slug, title, is_deleted), users:author_id (display_name, avatar, avatar_config)"
+      "id, page_id, summary, created_at, pages:page_id (slug, title, is_deleted, is_private), users:author_id (display_name, avatar, avatar_config)"
     )
     .order("created_at", { ascending: false })
     .limit(60);
   if (error) throw new Error("최근 변경 조회 실패: " + error.message);
 
-  const rows = (data ?? []).filter((r: any) => r.pages && !r.pages.is_deleted);
+  const rows = (data ?? []).filter(
+    (r: any) => r.pages && !r.pages.is_deleted && !r.pages.is_private
+  );
 
   // 최초작성 판별: 관련 페이지들의 가장 오래된 리비전 id
   const pageIds = [...new Set(rows.map((r: any) => r.page_id as string))];

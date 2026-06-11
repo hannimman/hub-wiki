@@ -12,6 +12,7 @@ import {
   hasCheckedInToday,
   listTransactions,
 } from "@/lib/points";
+import { listMyPrivatePages } from "@/lib/pages";
 import AttendanceCard from "./AttendanceCard";
 import PointHistoryButton from "./PointHistoryButton";
 import MyPasswordForm from "./MyPasswordForm";
@@ -28,10 +29,11 @@ export default async function MyPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [points, checkedIn, txs] = await Promise.all([
+  const [points, checkedIn, txs, privatePages] = await Promise.all([
     getPoints(user.id),
     hasCheckedInToday(user.id),
     listTransactions(user.id, 30),
+    listMyPrivatePages(user.id),
   ]);
 
   const avatarData: AvatarV2Data = isV2(user.avatar_config)
@@ -100,6 +102,47 @@ export default async function MyPage() {
           </div>
         </div>
       </div>
+
+      {privatePages.length > 0 && (
+        <>
+          <h2
+            style={{
+              fontSize: 18,
+              marginTop: 36,
+              paddingTop: 24,
+              borderTop: "1px solid var(--border)",
+            }}
+          >
+            🔒 내 비공개 글 ({privatePages.length})
+          </h2>
+          <p className="muted" style={{ fontSize: 13, marginTop: 4 }}>
+            모든 목록에서 숨겨진 글입니다. 본인만 볼 수 있으며, 글에서 공개로
+            전환할 수 있어요.
+          </p>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {privatePages.map((p) => (
+              <li
+                key={p.id}
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  padding: "9px 0",
+                  borderBottom: "1px solid var(--border)",
+                }}
+              >
+                <span>🔒</span>
+                <Link href={`/wiki/${p.slug}`} style={{ fontWeight: 600, flex: 1 }}>
+                  {p.title}
+                </Link>
+                <span className="muted" style={{ fontSize: 12 }}>
+                  {new Date(p.updated_at).toLocaleDateString("ko-KR")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       <h2
         style={{
