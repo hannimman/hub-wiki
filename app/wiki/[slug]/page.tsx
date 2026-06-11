@@ -14,6 +14,7 @@ import {
   type AvatarV2Data,
 } from "@/lib/avatar/render";
 import WikiPlaza, { type PlazaMember } from "../WikiPlaza";
+import { SCENE_COUNT } from "../PlazaScenes";
 import {
   getRatingsEnabled,
   getMyRating,
@@ -180,6 +181,7 @@ export default async function PageView({
         members={crew}
         className="plaza--doc"
         uidPrefix="dplz"
+        scene={Math.floor(Math.random() * SCENE_COUNT)}
         title={[
           author ? `작성자 : ${author.display_name}` : null,
           contributors.length > 0

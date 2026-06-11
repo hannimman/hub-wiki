@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { AvatarFullV2, type AvatarV2Data } from "@/lib/avatar/render";
+import { SCENES } from "./PlazaScenes";
 
 export type PlazaMember = { id: string; name: string; data: AvatarV2Data };
 
@@ -13,11 +14,13 @@ export default function WikiPlaza({
   className = "",
   uidPrefix = "plz",
   title,
+  scene,
 }: {
   members: PlazaMember[];
   className?: string;
   uidPrefix?: string;
   title?: string; // 미지정 시 툴팁 없음 (팀 광장은 툴팁 없이)
+  scene?: number; // PlazaScenes 풍경 인덱스 — 지정 시 SVG 풍경을 배경으로 깐다
 }) {
   const plazaRef = useRef<HTMLDivElement>(null);
 
@@ -132,6 +135,11 @@ export default function WikiPlaza({
       ref={plazaRef}
       title={title}
     >
+      {scene != null && (
+        <div className="plaza-scene" aria-hidden>
+          {SCENES[((scene % SCENES.length) + SCENES.length) % SCENES.length]}
+        </div>
+      )}
       {members.map((m, i) => (
         <div key={m.id} className="plaza-char">
           <AvatarFullV2 data={m.data} width={84} uid={`${uidPrefix}${i}`} noBg />
