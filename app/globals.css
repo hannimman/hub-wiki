@@ -867,6 +867,24 @@ a {
   width: 100%;
   height: 100%;
 }
+
+/* ── 휴지통 (트리 최하단 가상 노드) ── */
+.tw-trash {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+.tw-trash .tw-label,
+.tw-trash .tw-icon {
+  color: #8b95a3;
+}
+.tw-trash-title {
+  text-decoration: line-through;
+  text-decoration-color: rgba(139, 149, 163, 0.55);
+}
+.tw-trash-item:hover .tw-act {
+  opacity: 1;
+}
 .plaza-char {
   position: absolute;
   bottom: 4px;

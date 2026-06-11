@@ -486,6 +486,66 @@ export async function softDeletePage(userId: string, pageId: string): Promise<vo
   if (error) throw new Error("삭제 실패: " + error.message);
 }
 
+// ── 휴지통 ─────────────────────────────
+// 휴지통은 DB 폴더가 아니라 가상 노드: is_deleted 행의 목록일 뿐이다.
+export type TrashItem = {
+  id: string;
+  slug: string;
+  title: string;
+  is_folder: boolean;
+  deleted_at: string | null;
+};
+
+export async function listTrash(): Promise<TrashItem[]> {
+  const db = getAdminDb();
+  const { data, error } = await db
+    .from("pages")
+    .select("id, slug, title, is_folder, deleted_at")
+    .eq("is_deleted", true)
+    .order("deleted_at", { ascending: false })
+    .limit(500);
+  if (error) throw new Error("휴지통 조회 실패: " + error.message);
+  return (data ?? []) as TrashItem[];
+}
+
+// 복원 — 상위 폴더는 복원자가 지정(null=최상위). 원래 폴더가 삭제됐을 수 있어
+// 삭제 당시 parent_id 는 신뢰하지 않는다.
+export async function restorePage(
+  pageId: string,
+  parentId: string | null
+): Promise<void> {
+  const db = getAdminDb();
+  const { data: page } = await db
+    .from("pages")
+    .select("id, is_deleted")
+    .eq("id", pageId)
+    .maybeSingle();
+  if (!page || !page.is_deleted)
+    throw new AuthError("휴지통에 없는 문서입니다.", 404);
+
+  if (parentId) {
+    const { data: parent } = await db
+      .from("pages")
+      .select("id, is_folder, is_deleted")
+      .eq("id", parentId)
+      .maybeSingle();
+    if (!parent || parent.is_deleted || !parent.is_folder)
+      throw new AuthError("복원할 상위 폴더가 올바르지 않습니다.", 400);
+  }
+
+  const { error } = await db
+    .from("pages")
+    .update({
+      is_deleted: false,
+      deleted_at: null,
+      deleted_by: null,
+      parent_id: parentId,
+      updated_at: nowIso(),
+    })
+    .eq("id", pageId);
+  if (error) throw new Error("복원 실패: " + error.message);
+}
+
 // ── 작성자/기여자 ──
 export type UserBrief = {
   id: string;
