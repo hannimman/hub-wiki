@@ -149,7 +149,7 @@ export const COSPLAY: Record<string, Item[]> = {
       svg: pantsBase(DG.w, DG.o) +
         `<path d="M196 262 Q216 254 214 234" stroke="${DG.w}" stroke-width="9" fill="none" stroke-linecap="round"/>
          <path d="M196 262 Q216 254 214 234" stroke="${DG.o}" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"/>
-         <circle cx="146" cy="320" r="4" fill="${DG.br}"/>`,
+`,
     },
     {
       id: "cos-ny-bottom", name: "냥이 하의", price: 300,
@@ -178,9 +178,7 @@ export const COSPLAY: Record<string, Item[]> = {
     },
     {
       id: "cos-dg-shoes", name: "도기 발", price: 250,
-      svg: shoeBase(DG.w, DG.o) +
-        `<circle cx="140" cy="345" r="3" fill="${DG.br}"/><circle cx="149" cy="345" r="3" fill="${DG.br}"/>
-         <circle cx="172" cy="345" r="3" fill="${DG.br}"/><circle cx="181" cy="345" r="3" fill="${DG.br}"/>`,
+      svg: shoeBase(DG.br, DG.o),
     },
     {
       id: "cos-ny-shoes", name: "냥이 발", price: 250,
