@@ -55,6 +55,18 @@ const SAMPLES: { label: string; data: AvatarV2Data }[] = [
     },
   },
   {
+    label: '영포티 풀세트',
+    data: {
+      v: 2,
+      face: { eyes: 'eyes-line', nose: 'nose-round', mouth: 'mouth-smile' },
+      equipped: {
+        hat: 'yf-cap', faceAcc: 'yf-glasses', top: 'yf-tee',
+        bottom: 'yf-shorts', shoes: 'yf-sneakers',
+        handL: 'yf-tote', handR: 'yf-phone',
+      },
+    },
+  },
+  {
     label: '토리 풀세트',
     data: {
       v: 2,

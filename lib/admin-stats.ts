@@ -23,6 +23,7 @@ type PageRow = {
   is_folder: boolean;
   is_deleted: boolean;
   is_private: boolean;
+  ratings_enabled: boolean;
   created_by: string | null;
   updated_at: string;
   current_revision_id: string | null;
@@ -40,7 +41,7 @@ async function fetchBase() {
     db
       .from("pages")
       .select(
-        "id, slug, title, is_folder, is_deleted, is_private, created_by, updated_at, current_revision_id"
+        "id, slug, title, is_folder, is_deleted, is_private, ratings_enabled, created_by, updated_at, current_revision_id"
       )
       .limit(PAGE_LIMIT),
     db
@@ -308,7 +309,10 @@ export async function getContentHealth(staleDays = 90): Promise<ContentHealth> {
     )
     .map(toDoc);
 
-  const unrated = liveDocs.filter((p) => !rated.has(p.id)).map(toDoc);
+  // 작성자가 "⭐ 평가 받기"를 켠 문서만 대상 (안 켠 글은 평가 없는 게 정상)
+  const unrated = liveDocs
+    .filter((p) => p.ratings_enabled && !rated.has(p.id))
+    .map(toDoc);
 
   return { stale, empty, unrated, staleDays };
 }

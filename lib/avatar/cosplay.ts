@@ -32,8 +32,28 @@ const NY = { w: "#ffffff", o: "#f2b3c7", f: "#fbe3ec", n: "#e83e8c" }; // 냥이
 const TR = { w: "#ffffff", o: "#1d1d1d", or: "#e84e2f", pe: "#f8d2b8" }; // 토리
 const BR = { y: "#ffd23f", o: "#1d1d1d", st: "#6b4a2a", bl: "#2a9df4" }; // 버리
 
+// ── 영포티룩 팔레트 ──
+const YF = {
+  black: "#1d1f24", // 볼캡·크로스백·스니커즈
+  dark: "#17181c",
+  gray: "#5a5d63", // SOLID 티셔츠
+  grayLine: "#43464c",
+  denim: "#7ba6c9", // 데님 반바지
+  denimLine: "#5a85a8",
+  white: "#ffffff",
+  cream: "#f6f4ef", // 토트백
+  orange: "#ff5a36", // 폰
+};
+
 export const COSPLAY: Record<string, Item[]> = {
   hat: [
+    {
+      id: "yf-cap", name: "영포티 볼캡", price: 400,
+      svg: `<path d="M106 92 Q108 46 160 44 Q212 46 214 92 Q160 76 106 92 Z" fill="${YF.black}" stroke="#000" stroke-width="3"/>
+        <path d="M160 44 Q158 64 157 80 M132 52 Q126 68 124 84 M188 52 Q194 68 196 84" stroke="#33363d" stroke-width="2" fill="none"/>
+        <ellipse cx="160" cy="91" rx="60" ry="10" fill="#101216"/>
+        <text x="160" y="80" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="bold" fill="${YF.white}">S</text>`,
+    },
     {
       id: "cos-dm-ears", name: "듬이 곰귀", price: 250,
       svg: `<circle cx="115" cy="74" r="15" fill="${DM.w}" stroke="${DM.o}" stroke-width="4"/>
@@ -69,6 +89,13 @@ export const COSPLAY: Record<string, Item[]> = {
   ],
 
   faceAcc: [
+    {
+      id: "yf-glasses", name: "영포티 안경", price: 250,
+      svg: `<rect x="124" y="99" width="32" height="23" rx="8" fill="rgba(255,255,255,0.25)" stroke="#2b2b2b" stroke-width="3"/>
+        <rect x="164" y="99" width="32" height="23" rx="8" fill="rgba(255,255,255,0.25)" stroke="#2b2b2b" stroke-width="3"/>
+        <path d="M156 109 Q160 106 164 109" stroke="#2b2b2b" stroke-width="3" fill="none"/>
+        <path d="M124 107 L107 103 M196 107 L213 103" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/>`,
+    },
     {
       id: "cos-dm-face", name: "듬이 볼·코", price: 200,
       svg: `<circle cx="126" cy="140" r="11" fill="${DM.c}"/>
@@ -110,6 +137,17 @@ export const COSPLAY: Record<string, Item[]> = {
 
   top: [
     {
+      // 회색 SOLID 티셔츠 + 검정 크로스백 (스트랩이 가슴을 가로지름)
+      id: "yf-tee", name: "SOLID 티셔츠+크로스백", price: 600,
+      svg: topBase(YF.gray, YF.grayLine) +
+        `<text x="160" y="216" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="bold" fill="${YF.dark}" letter-spacing="1">SOLID</text>
+        <path d="M184 178 L132 252" stroke="${YF.dark}" stroke-width="9" stroke-linecap="round"/>
+        <rect x="166" y="196" width="12" height="7" rx="2" fill="#3a3d44" transform="rotate(-55 172 199)"/>
+        <rect x="110" y="240" width="42" height="28" rx="6" fill="${YF.dark}" stroke="#000" stroke-width="2.5"/>
+        <path d="M110 250 H152" stroke="#3a3d44" stroke-width="2"/>
+        <rect x="126" y="246" width="10" height="8" rx="2" fill="#8e939c"/>`,
+    },
+    {
       id: "cos-dm-top", name: "듬이 상의", price: 350,
       svg: topBase(DM.w, DM.o) +
         `<ellipse cx="160" cy="226" rx="29" ry="26" fill="${DM.b}"/>`,
@@ -141,6 +179,17 @@ export const COSPLAY: Record<string, Item[]> = {
 
   bottom: [
     {
+      // 찢어진 데님 반바지 — 밑단 올풀림 + 무릎 위 찢김
+      id: "yf-shorts", name: "찢어진 데님 반바지", price: 550,
+      svg: `<path d="M125 250 Q160 262 195 250 L195 302 Q186 308 167 306 L166 285 Q160 282 154 285 L153 306 Q134 308 125 302 Z" fill="${YF.denim}" stroke="${YF.denimLine}" stroke-width="3"/>
+        <rect x="133" y="300" width="25" height="30" rx="5" fill="${YF.denim}" stroke="${YF.denimLine}" stroke-width="3"/>
+        <rect x="162" y="300" width="25" height="30" rx="5" fill="${YF.denim}" stroke="${YF.denimLine}" stroke-width="3"/>
+        <path d="M134 330 l3 5 M140 331 l2 5 M147 331 l2 5 M153 330 l3 5 M163 330 l3 5 M170 331 l2 5 M177 331 l2 5 M183 330 l3 5" stroke="#e8f1f8" stroke-width="2" stroke-linecap="round"/>
+        <path d="M138 312 h13 M168 318 h12" stroke="#e8f1f8" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M131 262 Q137 268 133 276 M189 262 Q183 268 187 276" stroke="${YF.denimLine}" stroke-width="2" fill="none"/>
+        <path d="M150 256 L153 282 M170 256 L167 282" stroke="${YF.denimLine}" stroke-width="1.6" stroke-dasharray="3 3"/>`,
+    },
+    {
       id: "cos-dm-bottom", name: "듬이 하의", price: 300,
       svg: pantsBase(DM.w, DM.o),
     },
@@ -166,6 +215,14 @@ export const COSPLAY: Record<string, Item[]> = {
 
   handL: [
     {
+      // 화이트 쇼핑 토트백 (큰 체크 로고)
+      id: "yf-tote", name: "화이트 토트백", price: 450,
+      svg: `<path d="M92 248 Q103 232 114 248" stroke="${YF.dark}" stroke-width="5" fill="none"/>
+        <rect x="76" y="246" width="54" height="50" rx="4" fill="${YF.cream}" stroke="#cfcabe" stroke-width="2.5"/>
+        <path d="M84 252 L84 290 M122 252 L122 290" stroke="#dfd9cc" stroke-width="2"/>
+        <path d="M84 276 Q98 286 122 262" stroke="${YF.dark}" stroke-width="7" fill="none" stroke-linecap="round"/>`,
+    },
+    {
       // 주가 하락(파란) 꺾은선 화살표 — 하락이라 헐값
       id: "hand-stock-down-l", name: "주가 하락 화살표", price: 100,
       svg: `<path d="M58 212 L80 234 L90 224 L112 248" stroke="#1c5fc4" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -176,6 +233,16 @@ export const COSPLAY: Record<string, Item[]> = {
   ],
 
   handR: [
+    {
+      // 주황 스마트폰
+      id: "yf-phone", name: "영포티 폰", price: 300,
+      svg: `<g transform="rotate(12 221 249)">
+        <rect x="208" y="226" width="26" height="46" rx="6" fill="${YF.orange}" stroke="#c93d20" stroke-width="2.5"/>
+        <rect x="212" y="232" width="18" height="31" rx="3" fill="#ffd9cf" opacity="0.85"/>
+        <circle cx="221" cy="267" r="2.2" fill="#c93d20"/>
+        <circle cx="214" cy="231" r="1.8" fill="#3a2620"/>
+      </g>`,
+    },
     {
       // 주가 상승(빨간) 꺾은선 화살표 — 상승은 프리미엄
       id: "hand-stock-up-r", name: "주가 상승 화살표", price: 1200,
@@ -200,6 +267,18 @@ export const COSPLAY: Record<string, Item[]> = {
   ],
 
   shoes: [
+    {
+      // 흰 목양말 + 검정 스니커즈 (흰 밑창·로고)
+      id: "yf-sneakers", name: "스니커즈+목양말", price: 500,
+      svg: `<rect x="133" y="308" width="24" height="30" rx="6" fill="${YF.white}" stroke="#d9d9d9" stroke-width="2"/>
+        <rect x="163" y="308" width="24" height="30" rx="6" fill="${YF.white}" stroke="#d9d9d9" stroke-width="2"/>
+        <path d="M135 314 h20 M165 314 h20" stroke="#c3cbd4" stroke-width="2"/>
+        <rect x="127" y="334" width="34" height="24" rx="11" fill="${YF.black}" stroke="#000" stroke-width="3"/>
+        <rect x="159" y="334" width="34" height="24" rx="11" fill="${YF.black}" stroke="#000" stroke-width="3"/>
+        <path d="M127 350 Q144 356 161 350 L161 354 Q144 360 127 354 Z" fill="${YF.white}"/>
+        <path d="M159 350 Q176 356 193 350 L193 354 Q176 360 159 354 Z" fill="${YF.white}"/>
+        <path d="M132 345 Q140 349 152 340 M164 345 Q172 349 184 340" stroke="${YF.white}" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+    },
     {
       id: "cos-dm-shoes", name: "듬이 발", price: 250,
       svg: shoeBase(DM.w, DM.o) +
