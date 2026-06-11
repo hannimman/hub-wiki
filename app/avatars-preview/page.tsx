@@ -39,6 +39,30 @@ const SAMPLES: { label: string; data: AvatarV2Data }[] = [
       },
     },
   },
+  {
+    label: '듬이 풀세트',
+    data: {
+      v: 2,
+      face: { eyes: 'eyes-line', nose: 'nose-none', mouth: 'mouth-smile' },
+      equipped: { hat: 'cos-dm-ears', faceAcc: 'cos-dm-face', top: 'cos-dm-top', bottom: 'cos-dm-bottom', shoes: 'cos-dm-shoes' },
+    },
+  },
+  {
+    label: '버리 풀세트',
+    data: {
+      v: 2,
+      face: { eyes: 'eyes-basic', nose: 'nose-none', mouth: 'mouth-smile' },
+      equipped: { hat: 'cos-br-antenna', faceAcc: 'cos-br-glasses', top: 'cos-br-top', bottom: 'cos-br-bottom', shoes: 'cos-br-shoes' },
+    },
+  },
+  {
+    label: '토리 풀세트',
+    data: {
+      v: 2,
+      face: { eyes: 'eyes-basic', nose: 'nose-none', mouth: 'mouth-smile' },
+      equipped: { hat: 'cos-tr-ears', faceAcc: 'cos-tr-face', top: 'cos-tr-top', bottom: 'cos-tr-bottom', shoes: 'cos-tr-shoes' },
+    },
+  },
 ];
 
 export default function AvatarsPreviewPage() {

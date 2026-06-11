@@ -9,6 +9,7 @@ export type FaceOption = { id: string; name: string; svg: string };
 export type FaceSection = { id: 'eyes' | 'nose' | 'mouth'; name: string; zoom: string };
 
 import { PETS_L, PETS_R } from "./pets";
+import { COSPLAY } from "./cosplay";
 
 export const SLOTS: Slot[] = [
   { id: "hair", name: "헤어", zoom: "88 30 144 130" },
@@ -970,6 +971,11 @@ export const FACE_OPTIONS: Record<string, FaceOption[]> = {
     },
   ],
 };
+
+// 코스프레 세트(듬이/도기/냥이/토리/버리)를 각 슬롯에 합류 — ITEM_INDEX 구축 전에 병합해야 한다
+for (const [slotId, items] of Object.entries(COSPLAY)) {
+  (ITEMS[slotId] = ITEMS[slotId] || []).push(...items);
+}
 
 // ── 파생 헬퍼 ──
 export function findItem(slotId: string, itemId: string | null | undefined): AvatarItem | null {
