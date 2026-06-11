@@ -22,17 +22,9 @@ export default async function WikiLayout({
     parent_id: n.parent_id,
     is_folder: n.is_folder,
   }));
-  const trashNodes = trash.map((t) => ({
-    id: t.id,
-    slug: t.slug,
-    title: t.title,
-    is_folder: t.is_folder,
-    deleted_at: t.deleted_at,
-  }));
-
   return (
     <div className="wiki-shell">
-      <WikiSidebar nodes={nodes} trash={trashNodes} />
+      <WikiSidebar nodes={nodes} trashCount={trash.length} />
       <div className="wiki-content">{children}</div>
     </div>
   );

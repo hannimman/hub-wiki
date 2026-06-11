@@ -4,6 +4,7 @@
 // 흉상(bust): 헤더/작성자 표시용 동그라미 — 얼굴 크롭 viewBox, clipPath 불필요(목록에 다수 렌더 안전).
 
 import { ITEMS, FACE_OPTIONS, SLOTS, findItem, findFace } from "./catalog";
+import BustHover from "./BustHover";
 
 export type AvatarV2Data = {
   v: 2;
@@ -208,6 +209,8 @@ export function composeBustSvg(data: AvatarV2Data): string {
 // 흉상(동그라미 아이콘). 마우스 오버 시 풀착장(전신) 레이어 팝업 내장 —
 // 어떤 화면에서 쓰든(기존·신규 전부) 자동으로 팝업이 따라온다.
 // 팝업은 flat 렌더(id 미사용)라 한 페이지에 다수 복제돼도 충돌 없음.
+// 팝업 위치는 BustHover(클라이언트)가 position:fixed 로 계산 —
+// 표/스크롤 컨테이너(overflow) 안에서도 잘리지 않는다.
 export function AvatarBustV2({
   data,
   size = 32,
@@ -216,25 +219,13 @@ export function AvatarBustV2({
   size?: number;
 }) {
   return (
-    <span className="av-hover" style={{ width: size, height: size }}>
-      <svg
-        viewBox={VIEWBOX_BUST}
-        width={size}
-        height={size}
-        role="img"
-        aria-label="아바타"
-        style={{ borderRadius: "50%", background: "#eef4fb", flexShrink: 0 }}
-        dangerouslySetInnerHTML={{ __html: composeBustSvg(data) }}
-      />
-      <span className="av-pop" aria-hidden>
-        <svg
-          viewBox={VIEWBOX_FULL}
-          width={150}
-          height={188}
-          dangerouslySetInnerHTML={{ __html: composeFlatFullSvg(data) }}
-        />
-      </span>
-    </span>
+    <BustHover
+      size={size}
+      bustViewBox={VIEWBOX_BUST}
+      fullViewBox={VIEWBOX_FULL}
+      bustSvg={composeBustSvg(data)}
+      fullSvg={composeFlatFullSvg(data)}
+    />
   );
 }
 

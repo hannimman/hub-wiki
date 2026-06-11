@@ -11,14 +11,6 @@ export type SidebarNode = {
   parent_id: string | null;
   is_folder: boolean;
 };
-// 휴지통 항목 — 실제 폴더가 아니라 is_deleted 행의 평탄 목록(가상 노드)
-export type TrashNode = {
-  id: string;
-  slug: string;
-  title: string;
-  is_folder: boolean;
-  deleted_at: string | null;
-};
 type TNode = SidebarNode & { children: TNode[] };
 
 const LS_KEY = "hubwiki-expanded";
@@ -60,10 +52,10 @@ function descendantIds(items: SidebarNode[], rootId: string): Set<string> {
 
 export default function WikiSidebar({
   nodes,
-  trash = [],
+  trashCount = 0,
 }: {
   nodes: SidebarNode[];
-  trash?: TrashNode[];
+  trashCount?: number;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -84,36 +76,6 @@ export default function WikiSidebar({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameVal, setRenameVal] = useState("");
 
-  // ── 휴지통 (가상 노드 — 이름변경/삭제/DnD 없음, 항상 트리 최하단) ──
-  const [trashItems, setTrashItems] = useState<TrashNode[]>(trash);
-  useEffect(() => setTrashItems(trash), [trash]);
-  const [trashOpen, setTrashOpen] = useState(false);
-  const [restoring, setRestoring] = useState<TrashNode | null>(null);
-  const [restoreParent, setRestoreParent] = useState(""); // "" = 최상위
-
-  // 복원 모달 상위 폴더 옵션 — 서버 listParentOptions 와 같은 들여쓰기 평탄 트리
-  const folderOptions = useMemo(() => {
-    const folders = items.filter((n) => n.is_folder);
-    const ids = new Set(folders.map((f) => f.id));
-    const childrenOf = new Map<string | null, SidebarNode[]>();
-    for (const f of folders) {
-      const k = f.parent_id && ids.has(f.parent_id) ? f.parent_id : null;
-      if (!childrenOf.has(k)) childrenOf.set(k, []);
-      childrenOf.get(k)!.push(f);
-    }
-    const out: { id: string; label: string }[] = [];
-    const walk = (pid: string | null, depth: number) => {
-      for (const f of childrenOf.get(pid) ?? []) {
-        out.push({
-          id: f.id,
-          label: `${"  ".repeat(depth)}${depth > 0 ? "└ " : ""}${f.title}`,
-        });
-        walk(f.id, depth + 1);
-      }
-    };
-    walk(null, 0);
-    return out;
-  }, [items]);
 
   // ── 포인터 기반 드래그 상태 ──
   const [dragId, setDragId] = useState<string | null>(null);
@@ -314,50 +276,6 @@ export default function WikiSidebar({
     else {
       const d = await res.json().catch(() => ({}));
       alert(d.error ?? "삭제 실패");
-    }
-  }
-
-  async function restore() {
-    const target = restoring;
-    if (!target) return;
-    const parentId = restoreParent || null;
-    setRestoring(null);
-
-    // 낙관적 즉시 반영: 휴지통에서 빼고 트리에 꽂은 뒤 강조
-    setTrashItems((prev) => prev.filter((t) => t.id !== target.id));
-    setItems((prev) => [
-      ...prev,
-      {
-        id: target.id,
-        slug: target.slug,
-        title: target.title,
-        parent_id: parentId,
-        is_folder: target.is_folder,
-      },
-    ]);
-    if (parentId) {
-      setExpanded((prev) => {
-        const n = new Set(prev);
-        n.add(parentId);
-        persist(n);
-        return n;
-      });
-    }
-    setJustMovedId(target.id);
-    window.setTimeout(() => setJustMovedId(null), 1200);
-
-    const res = await fetch(`/api/pages/${target.id}/untrash`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ parentId }),
-    });
-    if (res.ok) {
-      router.refresh();
-    } else {
-      const d = await res.json().catch(() => ({}));
-      alert(d.error ?? "복원 실패");
-      setItems(nodes); // 실패 시 서버 상태로 복귀
-      setTrashItems(trash);
     }
   }
 
@@ -569,100 +487,21 @@ export default function WikiSidebar({
         </div>
       )}
 
-      {/* 휴지통 — 가상 노드. 항상 트리 최하단, 이름변경/삭제/이동 불가 */}
+      {/* 휴지통 — 가상 노드. 클릭하면 메인 화면에 삭제글 리스트(/wiki/trash). 항상 트리 최하단 */}
       <div className="tw-trash">
-        <div className="tree-row tw-trash-head" style={{ paddingLeft: 8 }}>
-          <button
-            className="tw-chev"
-            onClick={() => setTrashOpen((v) => !v)}
-            aria-label="휴지통 펼치기/접기"
-          >
-            {trashItems.length > 0 ? (trashOpen ? "▾" : "▸") : "·"}
-          </button>
+        <div
+          className={`tree-row tw-trash-head${
+            pathname?.startsWith("/wiki/trash") ? " active" : ""
+          }`}
+          style={{ paddingLeft: 8 }}
+        >
+          <span className="tw-chev" />
           <span className="tw-icon">🗑️</span>
-          <button className="tw-label" onClick={() => setTrashOpen((v) => !v)}>
-            휴지통{trashItems.length > 0 ? ` (${trashItems.length})` : ""}
-          </button>
+          <Link className="tw-label" href="/wiki/trash">
+            휴지통{trashCount > 0 ? ` (${trashCount})` : ""}
+          </Link>
         </div>
-        {trashOpen &&
-          (trashItems.length === 0 ? (
-            <p className="muted" style={{ padding: "2px 12px 8px 34px", fontSize: 12, margin: 0 }}>
-              비어 있습니다.
-            </p>
-          ) : (
-            trashItems.map((t) => (
-              <div
-                key={t.id}
-                className="tree-row tw-trash-item"
-                style={{ paddingLeft: 22 }}
-              >
-                <span className="tw-chev" />
-                <span className="tw-icon">{t.is_folder ? "📁" : "📄"}</span>
-                <span
-                  className="tw-label tw-trash-title"
-                  title={
-                    t.deleted_at
-                      ? `삭제: ${new Date(t.deleted_at).toLocaleString("ko-KR")}`
-                      : undefined
-                  }
-                >
-                  {t.title}
-                </span>
-                <span className="tw-actions">
-                  <button
-                    className="tw-act"
-                    title="복원"
-                    onClick={() => {
-                      setRestoreParent("");
-                      setRestoring(t);
-                    }}
-                  >
-                    ♻ 복원
-                  </button>
-                </span>
-              </div>
-            ))
-          ))}
       </div>
-
-      {/* 복원 모달 — 상위 폴더를 복원자가 지정(기본 최상위) */}
-      {restoring && (
-        <div className="modal-backdrop" onClick={() => setRestoring(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginTop: 0 }}>
-              ♻ &lsquo;{restoring.title}&rsquo; 복원
-            </h3>
-            <p className="muted" style={{ fontSize: 13 }}>
-              복원할 위치를 선택하세요. 삭제 당시의 폴더가 사라졌을 수 있어
-              기본값은 최상위입니다.
-            </p>
-            <select
-              className="tw-input"
-              style={{ width: "100%", padding: "8px 10px" }}
-              value={restoreParent}
-              onChange={(e) => setRestoreParent(e.target.value)}
-            >
-              <option value="">(최상위)</option>
-              {folderOptions.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-            <div
-              className="row"
-              style={{ justifyContent: "flex-end", gap: 8, marginTop: 14 }}
-            >
-              <button className="btn btn-sm" onClick={() => setRestoring(null)}>
-                취소
-              </button>
-              <button className="btn btn-primary btn-sm" onClick={restore}>
-                ♻ 복원
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {dragId && dragPos && (
         <div

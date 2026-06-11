@@ -18,15 +18,12 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <main className="container page">
-      <h1>🛡️ 관리자</h1>
-      <AdminControls
-        invites={invites}
-        users={users}
-        stats={stats}
-        isSuper={user.role === "super"}
-        meId={user.id}
-      />
-    </main>
+    <AdminControls
+      invites={invites}
+      users={users}
+      stats={stats}
+      isSuper={user.role === "super"}
+      meId={user.id}
+    />
   );
 }

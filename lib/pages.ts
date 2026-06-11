@@ -477,6 +477,38 @@ export async function updatePage(
   return { changed };
 }
 
+// 수정 이력에 삭제/복원 흔적을 남기는 마커 리비전 — 본문은 현재 리비전 그대로 복사.
+// (폴더는 리비전이 없으므로 건너뛴다. 실패해도 본 동작은 막지 않는다.)
+async function insertAuditRevision(
+  pageId: string,
+  authorId: string,
+  summary: string
+): Promise<void> {
+  try {
+    const db = getAdminDb();
+    const { data: page } = await db
+      .from("pages")
+      .select("title, is_folder, current_revision_id")
+      .eq("id", pageId)
+      .maybeSingle();
+    if (!page || page.is_folder || !page.current_revision_id) return;
+    const { data: rev } = await db
+      .from("page_revisions")
+      .select("content")
+      .eq("id", page.current_revision_id)
+      .maybeSingle();
+    await db.from("page_revisions").insert({
+      page_id: pageId,
+      title: page.title,
+      content: rev?.content ?? "",
+      summary,
+      author_id: authorId,
+    });
+  } catch (e) {
+    console.error("audit revision failed", e);
+  }
+}
+
 export async function softDeletePage(userId: string, pageId: string): Promise<void> {
   const db = getAdminDb();
   const { error } = await db
@@ -484,6 +516,7 @@ export async function softDeletePage(userId: string, pageId: string): Promise<vo
     .update({ is_deleted: true, deleted_at: nowIso(), deleted_by: userId })
     .eq("id", pageId);
   if (error) throw new Error("삭제 실패: " + error.message);
+  await insertAuditRevision(pageId, userId, "🗑 문서 삭제");
 }
 
 // ── 휴지통 ─────────────────────────────
@@ -494,25 +527,93 @@ export type TrashItem = {
   title: string;
   is_folder: boolean;
   deleted_at: string | null;
+  deleted_by_name: string | null; // 삭제 감사용
 };
 
 export async function listTrash(): Promise<TrashItem[]> {
   const db = getAdminDb();
   const { data, error } = await db
     .from("pages")
-    .select("id, slug, title, is_folder, deleted_at")
+    .select(
+      "id, slug, title, is_folder, deleted_at, deleter:users!pages_deleted_by_fkey (display_name)"
+    )
     .eq("is_deleted", true)
     .order("deleted_at", { ascending: false })
     .limit(500);
   if (error) throw new Error("휴지통 조회 실패: " + error.message);
-  return (data ?? []) as TrashItem[];
+  return ((data ?? []) as any[]).map((r) => ({
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    is_folder: r.is_folder,
+    deleted_at: r.deleted_at,
+    deleted_by_name: r.deleter?.display_name ?? null,
+  }));
+}
+
+// 삭제된 문서 상세 (휴지통에서 본문 보기용 — 일반 조회는 deleted 를 숨기므로 별도 함수)
+export async function getDeletedPage(pageId: string): Promise<{
+  id: string;
+  slug: string;
+  title: string;
+  is_folder: boolean;
+  deleted_at: string | null;
+  deleted_by_name: string | null;
+  content: string;
+} | null> {
+  const db = getAdminDb();
+  const { data: page } = await db
+    .from("pages")
+    .select(
+      "id, slug, title, is_folder, is_deleted, deleted_at, current_revision_id, deleter:users!pages_deleted_by_fkey (display_name)"
+    )
+    .eq("id", pageId)
+    .maybeSingle();
+  if (!page || !page.is_deleted) return null;
+
+  let content = "";
+  if (page.current_revision_id) {
+    const { data: rev } = await db
+      .from("page_revisions")
+      .select("content")
+      .eq("id", page.current_revision_id)
+      .maybeSingle();
+    content = rev?.content ?? "";
+  }
+  return {
+    id: page.id,
+    slug: page.slug,
+    title: page.title,
+    is_folder: page.is_folder ?? false,
+    deleted_at: page.deleted_at,
+    deleted_by_name: (page as any).deleter?.display_name ?? null,
+    content,
+  };
+}
+
+// 영구 삭제 (관리자 전용 호출) — 리비전·평가는 FK cascade 로 함께 삭제.
+// parent_id 로 이 문서를 가리키는 행이 있으면 FK 가 막으므로 먼저 끊는다.
+export async function hardDeletePage(pageId: string): Promise<void> {
+  const db = getAdminDb();
+  const { data: page } = await db
+    .from("pages")
+    .select("id, is_deleted")
+    .eq("id", pageId)
+    .maybeSingle();
+  if (!page || !page.is_deleted)
+    throw new AuthError("휴지통에 있는 문서만 영구 삭제할 수 있습니다.", 400);
+
+  await db.from("pages").update({ parent_id: null }).eq("parent_id", pageId);
+  const { error } = await db.from("pages").delete().eq("id", pageId);
+  if (error) throw new Error("영구 삭제 실패: " + error.message);
 }
 
 // 복원 — 상위 폴더는 복원자가 지정(null=최상위). 원래 폴더가 삭제됐을 수 있어
 // 삭제 당시 parent_id 는 신뢰하지 않는다.
 export async function restorePage(
   pageId: string,
-  parentId: string | null
+  parentId: string | null,
+  userId: string
 ): Promise<void> {
   const db = getAdminDb();
   const { data: page } = await db
@@ -523,14 +624,16 @@ export async function restorePage(
   if (!page || !page.is_deleted)
     throw new AuthError("휴지통에 없는 문서입니다.", 404);
 
+  let parentTitle: string | null = null;
   if (parentId) {
     const { data: parent } = await db
       .from("pages")
-      .select("id, is_folder, is_deleted")
+      .select("id, title, is_folder, is_deleted")
       .eq("id", parentId)
       .maybeSingle();
     if (!parent || parent.is_deleted || !parent.is_folder)
       throw new AuthError("복원할 상위 폴더가 올바르지 않습니다.", 400);
+    parentTitle = parent.title;
   }
 
   const { error } = await db
@@ -544,6 +647,11 @@ export async function restorePage(
     })
     .eq("id", pageId);
   if (error) throw new Error("복원 실패: " + error.message);
+  await insertAuditRevision(
+    pageId,
+    userId,
+    `♻ 휴지통에서 복원 (위치: ${parentTitle ?? "최상위"})`
+  );
 }
 
 // ── 작성자/기여자 ──

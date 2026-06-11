@@ -12,13 +12,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireUser();
+    const user = await requireUser();
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const parentId =
       typeof body?.parentId === "string" && body.parentId ? body.parentId : null;
 
-    await restorePage(id, parentId);
+    await restorePage(id, parentId, user.id);
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e instanceof AuthError)
