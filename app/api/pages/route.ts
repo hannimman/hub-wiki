@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireUser, AuthError } from "@/lib/auth";
 import { createPage } from "@/lib/pages";
+import { award, countTodayByReason, getPointConfig } from "@/lib/points";
+import { DAILY_CAP } from "@/lib/points-shared";
+
+// 적립 최소 본문 길이 — 빈 글 도배로 포인트 버는 것 방지
+const EARN_MIN_CONTENT = 100;
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +35,21 @@ export async function POST(req: Request) {
       ratingsEnabled,
       parentId
     );
+
+    // 포인트 적립 (실패해도 문서 생성은 성공 처리): 본문 100자 이상 + 하루 캡
+    try {
+      const cfg = await getPointConfig();
+      if (
+        cfg.newDoc > 0 &&
+        content.trim().length >= EARN_MIN_CONTENT &&
+        (await countTodayByReason(user.id, "new_doc")) < DAILY_CAP.new_doc
+      ) {
+        await award(user.id, cfg.newDoc, "new_doc", slug);
+      }
+    } catch (e) {
+      console.error("new doc points failed", e);
+    }
+
     return NextResponse.json({ ok: true, slug });
   } catch (e) {
     if (e instanceof AuthError)

@@ -326,9 +326,6 @@ export default function AdminControls({
             })}
           </tbody>
         </table>
-        <p style={{ color: "#999", fontSize: 12, marginTop: 8 }}>
-          역할·평가권한 변경은 슈퍼 제어판에서 가능합니다.
-        </p>
       </section>
     </div>
   );

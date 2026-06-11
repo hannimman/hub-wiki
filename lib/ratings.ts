@@ -61,11 +61,12 @@ export function canUserViewScores(user: SessionUser): boolean {
   return user.role === "super" || user.can_view_scores;
 }
 
+// 반환: 글 작성자 id (평가 적립 포인트 지급용)
 export async function submitRating(
   user: SessionUser,
   pageId: string,
   score: number
-): Promise<void> {
+): Promise<{ authorId: string | null }> {
   if (!Number.isInteger(score) || score < 0 || score > 100 || score % 10 !== 0) {
     throw new AuthError("점수는 0~100, 10점 단위여야 합니다.", 400);
   }
@@ -99,6 +100,8 @@ export async function submitRating(
     }
     throw new Error("평가 저장 실패: " + error.message);
   }
+
+  return { authorId: page.created_by ?? null };
 }
 
 // 슈퍼 전용: 리셋 (pageId 있으면 해당 글만, 없으면 전체)

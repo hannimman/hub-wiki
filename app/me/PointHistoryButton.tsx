@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ITEM_INDEX } from "@/lib/avatar/catalog";
-import { REASON_LABEL, type PointTx } from "@/lib/points";
+import { REASON_LABEL, type PointTx } from "@/lib/points-shared";
 
 // 이력 한 줄 설명: 상점 구매는 아이템 코드 대신 한글명으로
 function describe(t: PointTx): string {

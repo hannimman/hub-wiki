@@ -1,42 +1,55 @@
 import { getAdminDb } from "./db";
+import { POINTS, type PointConfig } from "./points-shared";
 
-// 포인트 적립 기본값 (서버 권위값)
-export const POINTS = {
-  signup: 1000, // 가입 환영 보너스
-  attendance: 10,
-  newDoc: 30,
-  edit: 5,
-  ratingReceived: 2,
-  ratingGiven: 3,
-} as const;
+// 공용 상수/타입은 points-shared.ts (클라이언트도 import 가능). 여기서 re-export.
+export {
+  POINTS,
+  POINT_CONFIG_LABEL,
+  DAILY_CAP,
+  REASON_LABEL,
+} from "./points-shared";
+export type { PointConfig, PointTx } from "./points-shared";
 
-// 하루 캡(남용 방지)
-export const DAILY_CAP = {
-  new_doc: 3, // 새 문서 적립 하루 최대 3건
-  edit: 5, // 수정 적립 하루 최대 5건
-  rating_given: 10, // 평가 참여 하루 최대 10건
-} as const;
+// 현재 적용 중인 항목별 지급 포인트 (설정 없으면 기본값)
+export async function getPointConfig(): Promise<PointConfig> {
+  const db = getAdminDb();
+  const { data } = await db
+    .from("app_settings")
+    .select("value")
+    .eq("key", "point_config")
+    .maybeSingle();
+  const saved = (data?.value ?? {}) as Partial<PointConfig>;
+  const merged: PointConfig = { ...POINTS };
+  for (const k of Object.keys(merged) as (keyof PointConfig)[]) {
+    const v = saved[k];
+    if (typeof v === "number" && Number.isFinite(v)) {
+      merged[k] = Math.max(0, Math.min(100000, Math.trunc(v)));
+    }
+  }
+  return merged;
+}
 
-// 적립 사유 → 사용자 표시 라벨 (이력 화면용). 새 출처 추가 시 여기에 라벨만 더하면 된다.
-export const REASON_LABEL: Record<string, string> = {
-  signup: "가입 보너스",
-  attendance: "출석",
-  new_doc: "문서 작성",
-  edit: "문서 수정",
-  rating_received: "평가 받음",
-  rating_given: "평가 참여",
-  buy: "상점 구매",
-  grant: "슈퍼 지급",
-  event: "이벤트 지급",
-};
+// 슈퍼 전용: 항목별 지급 포인트 저장
+export async function setPointConfig(
+  input: Partial<PointConfig>
+): Promise<PointConfig> {
+  const current = await getPointConfig();
+  const next: PointConfig = { ...current };
+  for (const k of Object.keys(POINTS) as (keyof PointConfig)[]) {
+    const v = input[k];
+    if (typeof v === "number" && Number.isFinite(v)) {
+      next[k] = Math.max(0, Math.min(100000, Math.trunc(v)));
+    }
+  }
+  const db = getAdminDb();
+  const { error } = await db
+    .from("app_settings")
+    .upsert({ key: "point_config", value: next });
+  if (error) throw new Error("포인트 설정 저장 실패: " + error.message);
+  return next;
+}
 
-export type PointTx = {
-  id: string;
-  amount: number;
-  reason: string;
-  ref: string | null;
-  created_at: string;
-};
+import type { PointTx } from "./points-shared";
 
 // KST 기준 오늘(YYYY-MM-DD)
 function kstToday(): string {
@@ -71,10 +84,11 @@ export async function hasCheckedInToday(userId: string): Promise<boolean> {
 
 // 출석. 반환: 이번에 적립된 포인트(0이면 오늘 이미 출석함)
 export async function checkIn(userId: string): Promise<number> {
+  const cfg = await getPointConfig();
   const db = getAdminDb();
   const { data, error } = await db.rpc("check_in", {
     p_user: userId,
-    p_amount: POINTS.attendance,
+    p_amount: cfg.attendance,
   });
   if (error) throw new Error("출석 처리 실패: " + error.message);
   return (data as number) ?? 0;

@@ -3,7 +3,7 @@ import { getAdminDb } from "@/lib/db";
 import { hashPassword, createSession, AuthError } from "@/lib/auth";
 import { sanitizeConfig, PRESET_IDS } from "@/lib/avatars";
 import { sanitizeAvatarV2, type AvatarV2Data } from "@/lib/avatar/render";
-import { award, POINTS } from "@/lib/points";
+import { award, getPointConfig } from "@/lib/points";
 
 export const dynamic = "force-dynamic";
 
@@ -94,7 +94,8 @@ export async function POST(req: Request) {
 
     // 4.5) 가입 환영 포인트 (이력에도 기록). 실패해도 가입은 막지 않는다.
     try {
-      await award(user.id, POINTS.signup, "signup");
+      const cfg = await getPointConfig();
+      if (cfg.signup > 0) await award(user.id, cfg.signup, "signup");
     } catch (e) {
       console.error("signup bonus failed", e);
     }

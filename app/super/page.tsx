@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getRatingsEnabled } from "@/lib/ratings";
+import { getPointConfig } from "@/lib/points";
 import { listUsers } from "@/lib/admin";
 import SuperControls from "./SuperControls";
 
@@ -14,6 +15,7 @@ export default async function SuperPage() {
 
   const ratingsEnabled = await getRatingsEnabled();
   const users = await listUsers();
+  const pointConfig = await getPointConfig();
 
   return (
     <main className="container page">
@@ -37,6 +39,7 @@ export default async function SuperPage() {
         ratingsEnabled={ratingsEnabled}
         users={users}
         meId={user.id}
+        pointConfig={pointConfig}
       />
     </main>
   );

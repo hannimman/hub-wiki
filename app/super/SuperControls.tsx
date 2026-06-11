@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/lib/avatars";
 import type { AdminUser } from "@/lib/admin";
+import {
+  POINT_CONFIG_LABEL,
+  type PointConfig,
+} from "@/lib/points-shared";
 
 const ROLE_LABEL: Record<string, string> = {
   super: "슈퍼",
@@ -15,14 +19,96 @@ export default function SuperControls({
   ratingsEnabled,
   users,
   meId,
+  pointConfig,
 }: {
   ratingsEnabled: boolean;
   users: AdminUser[];
   meId: string;
+  pointConfig: PointConfig;
 }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(ratingsEnabled);
   const [busy, setBusy] = useState(false);
+
+  // ── 포인트: 항목별 지급 설정 ──
+  const [cfg, setCfg] = useState<PointConfig>(pointConfig);
+  const [cfgSaved, setCfgSaved] = useState(false);
+
+  async function saveConfig() {
+    setBusy(true);
+    setCfgSaved(false);
+    const res = await fetch("/api/super/point-config", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ config: cfg }),
+    });
+    setBusy(false);
+    if (res.ok) {
+      const d = await res.json();
+      if (d.config) setCfg(d.config);
+      setCfgSaved(true);
+    } else {
+      const d = await res.json().catch(() => ({}));
+      alert(d.error ?? "설정 저장 실패");
+    }
+  }
+
+  // ── 포인트: 지급 (전체 / 선택) ──
+  const [grantScope, setGrantScope] = useState<"all" | "selected">("all");
+  const [grantAmount, setGrantAmount] = useState(100);
+  const [grantNote, setGrantNote] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+
+  async function grant() {
+    if (!grantAmount) {
+      alert("지급할 포인트를 입력하세요.");
+      return;
+    }
+    if (grantScope === "selected" && selected.size === 0) {
+      alert("지급할 유저를 선택하세요.");
+      return;
+    }
+    const who =
+      grantScope === "all" ? "활성 유저 전원" : `선택한 ${selected.size}명`;
+    if (
+      !confirm(
+        `${who}에게 ${grantAmount.toLocaleString()}P를 지급할까요?${
+          grantAmount < 0 ? "\n(음수 = 회수)" : ""
+        }`
+      )
+    )
+      return;
+    setBusy(true);
+    const res = await fetch("/api/super/points", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        scope: grantScope,
+        userIds: grantScope === "selected" ? [...selected] : undefined,
+        amount: grantAmount,
+        note: grantNote,
+      }),
+    });
+    setBusy(false);
+    const d = await res.json().catch(() => ({}));
+    if (res.ok) {
+      alert(`✅ ${d.affected}명에게 지급 완료!`);
+      setSelected(new Set());
+      setGrantNote("");
+      router.refresh();
+    } else {
+      alert(d.error ?? "지급 실패");
+    }
+  }
 
   async function toggleRatings() {
     const next = !enabled;
@@ -123,6 +209,157 @@ export default function SuperControls({
             전체 점수 리셋
           </button>
         </div>
+      </section>
+
+      {/* 포인트 */}
+      <section
+        style={{
+          margin: "20px 0",
+          padding: 16,
+          border: "1px solid #e2e2e2",
+          borderRadius: 12,
+        }}
+      >
+        <h2 style={{ fontSize: 16, marginTop: 0 }}>💰 포인트</h2>
+
+        {/* 항목별 지급 포인트 설정 */}
+        <div style={{ fontWeight: 700, fontSize: 14, margin: "4px 0 8px" }}>
+          항목별 지급 포인트
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))",
+            gap: 8,
+          }}
+        >
+          {(Object.keys(POINT_CONFIG_LABEL) as (keyof PointConfig)[]).map(
+            (k) => (
+              <label
+                key={k}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 13,
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  padding: "6px 10px",
+                }}
+              >
+                <span style={{ flex: 1 }}>{POINT_CONFIG_LABEL[k]}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100000}
+                  value={cfg[k]}
+                  onChange={(e) => {
+                    setCfgSaved(false);
+                    setCfg({ ...cfg, [k]: Number(e.target.value) });
+                  }}
+                  style={{
+                    width: 80,
+                    padding: "4px 6px",
+                    borderRadius: 6,
+                    border: "1px solid #ccc",
+                    textAlign: "right",
+                  }}
+                />
+                <span style={{ color: "#b45309", fontWeight: 700 }}>P</span>
+              </label>
+            )
+          )}
+        </div>
+        <div className="row" style={{ marginTop: 10 }}>
+          <button
+            onClick={saveConfig}
+            disabled={busy}
+            className="btn btn-primary btn-sm"
+          >
+            설정 저장
+          </button>
+          {cfgSaved && <span style={{ color: "#1b5e20", fontSize: 13 }}>저장됐어요 ✓</span>}
+        </div>
+
+        {/* 지급 */}
+        <div
+          style={{
+            fontWeight: 700,
+            fontSize: 14,
+            margin: "18px 0 8px",
+            paddingTop: 14,
+            borderTop: "1px solid var(--border)",
+          }}
+        >
+          포인트 지급 {grantAmount < 0 ? "(음수 = 회수)" : ""}
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <select
+            value={grantScope}
+            onChange={(e) => setGrantScope(e.target.value as "all" | "selected")}
+            style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14 }}
+          >
+            <option value="all">🎉 전체 (이벤트)</option>
+            <option value="selected">👤 선택한 유저</option>
+          </select>
+          <input
+            type="number"
+            value={grantAmount}
+            onChange={(e) => setGrantAmount(Math.trunc(Number(e.target.value)))}
+            style={{ width: 110, padding: "7px 10px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14, textAlign: "right" }}
+          />
+          <span style={{ color: "#b45309", fontWeight: 700 }}>P</span>
+          <input
+            placeholder="메모 (선택) — 이력에 표시"
+            value={grantNote}
+            onChange={(e) => setGrantNote(e.target.value)}
+            maxLength={100}
+            style={{ flex: 1, minWidth: 160, padding: "7px 10px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14 }}
+          />
+          <button onClick={grant} disabled={busy} className="btn btn-primary btn-sm">
+            {busy ? "처리 중…" : "지급"}
+          </button>
+        </div>
+        {grantScope === "selected" && (
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              marginTop: 10,
+            }}
+          >
+            {users
+              .filter((u) => u.is_active)
+              .map((u) => (
+                <label
+                  key={u.id}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    border: selected.has(u.id)
+                      ? "2px solid var(--primary)"
+                      : "1px solid var(--border)",
+                    background: selected.has(u.id) ? "#eff6ff" : "#fff",
+                    borderRadius: 999,
+                    padding: "4px 10px 4px 5px",
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.has(u.id)}
+                    onChange={() => toggleSelect(u.id)}
+                    style={{ display: "none" }}
+                  />
+                  <Avatar id={u.avatar} config={u.avatar_config} size={22} />
+                  {u.display_name}
+                </label>
+              ))}
+          </div>
+        )}
       </section>
 
       {/* 사용자 관리 */}

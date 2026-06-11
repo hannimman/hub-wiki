@@ -6,6 +6,13 @@ import {
   softDeletePage,
   hasChildren,
 } from "@/lib/pages";
+import {
+  award,
+  countTodayByReason,
+  alreadyAwardedTodayForRef,
+  getPointConfig,
+} from "@/lib/points";
+import { DAILY_CAP } from "@/lib/points-shared";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +60,23 @@ export async function PATCH(
       baseRevisionId,
       parentId
     );
+
+    // 포인트 적립 (실패해도 수정은 성공 처리): 실제 변경 + 같은 문서 하루 1회 + 총 캡
+    if (result.changed) {
+      try {
+        const cfg = await getPointConfig();
+        if (
+          cfg.edit > 0 &&
+          !(await alreadyAwardedTodayForRef(user.id, "edit", id)) &&
+          (await countTodayByReason(user.id, "edit")) < DAILY_CAP.edit
+        ) {
+          await award(user.id, cfg.edit, "edit", id);
+        }
+      } catch (e) {
+        console.error("edit points failed", e);
+      }
+    }
+
     return NextResponse.json({ ok: true, slug: page.slug, changed: result.changed });
   } catch (e) {
     if (e instanceof AuthError)
