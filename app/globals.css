@@ -878,6 +878,8 @@ a {
   border-radius: 16px;
   overflow: hidden;
   background: linear-gradient(#eaf3fd, #f4f9ff);
+  /* 캐릭터 겹침용 z-index(~420)가 모달(z 300) 위로 새지 않게 내부에 가둔다 */
+  isolation: isolate;
 }
 .village-char {
   position: absolute;
