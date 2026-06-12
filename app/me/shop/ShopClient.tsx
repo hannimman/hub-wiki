@@ -37,12 +37,14 @@ export default function ShopClient({
   initialOwned,
   initialPoints,
   catalogBySlot,
+  gachaCost = 300,
 }: {
   initialData: AvatarV2Data;
   initialOwned: string[];
   initialPoints: number;
   // 유효 카탈로그(기본 + DB 오버라이드/커스텀). 비활성 아이템은 보유자만 인벤토리에서 봄.
   catalogBySlot?: Record<string, (AvatarItem & { active?: boolean })[]>;
+  gachaCost?: number; // 가챠 1회 비용 (슈퍼 설정)
 }) {
   const router = useRouter();
   const [data, setData] = useState<AvatarV2Data>(initialData);
@@ -379,6 +381,7 @@ export default function ShopClient({
         setGachaResult(d.item as GachaResult);
         setOwned((prev) => new Set(prev).add(d.item.id));
         setPoints(d.balance);
+        router.refresh(); // 헤더 잔액 갱신
       } else {
         showToast(d.error ?? "가챠에 실패했습니다.");
       }
@@ -400,16 +403,20 @@ export default function ShopClient({
           🎰
         </div>
         <p className="muted" style={{ fontSize: 13, margin: "10px 0 14px" }}>
-          미보유 아이템 중 하나가 무작위로! <b>비쌀수록 희귀</b>해요.
-          (중복 없음)
+          1회 <b style={{ color: "#b45309" }}>🪙 {gachaCost.toLocaleString()}P</b>
+          {" — "}미보유 아이템 중 하나가 무작위로! <b>비쌀수록 희귀</b>해요. (중복 없음)
         </p>
         <button
           className="btn btn-primary"
           onClick={pullGacha}
-          disabled={spinning}
+          disabled={spinning || points < gachaCost}
           style={{ fontSize: 16, padding: "10px 26px" }}
         >
-          {spinning ? "두근두근…" : "🎰 가챠 돌리기"}
+          {spinning
+            ? "두근두근…"
+            : points < gachaCost
+            ? `포인트 부족 (${gachaCost.toLocaleString()}P 필요)`
+            : `🎰 가챠 돌리기 — ${gachaCost.toLocaleString()}P`}
         </button>
 
         {gachaResult && !spinning && (

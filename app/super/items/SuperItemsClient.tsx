@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { AvatarItem } from "@/lib/avatar/catalog";
+import { registerExtraItems, type AvatarItem } from "@/lib/avatar/catalog";
+import { AvatarFullV2, DEFAULT_AVATAR_V2 } from "@/lib/avatar/render";
+
+// 등록/수정 폼의 실시간 미리보기용 임시 아이템 id (저장 전엔 카탈로그에 없으므로)
+const PREVIEW_ID = "cust-__preview__";
 
 // 슈퍼 아이템 관리 — 슬롯별 목록(가격/활성 인라인 수정) + 커스텀 아이템 등록(미리보기).
 type Eff = AvatarItem & { slotId: string; active: boolean; custom: boolean };
@@ -20,14 +24,33 @@ export default function SuperItemsClient({
   // 가격 입력 로컬 상태 (id → 문자열)
   const [prices, setPrices] = useState<Record<string, string>>({});
 
-  // 커스텀 등록 폼
+  // 커스텀 등록/수정 폼
   const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null); // null=신규
   const [cSlot, setCSlot] = useState("hat");
   const [cName, setCName] = useState("");
   const [cPrice, setCPrice] = useState("300");
   const [cSvg, setCSvg] = useState("");
   const [cRigid, setCRigid] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [walkPrev, setWalkPrev] = useState(false); // 미리보기 걷기 (rigid 확인용)
+
+  // 입력 중인 SVG 를 임시 아이템으로 레지스트리에 등록 → 실제 렌더러로 미리보기
+  if (cSvg.trim()) {
+    registerExtraItems([
+      { id: PREVIEW_ID, slotId: cSlot, name: "미리보기", price: 0, svg: cSvg, rigid: cRigid },
+    ]);
+  }
+
+  function startEdit(it: Eff) {
+    setEditingId(it.id);
+    setCSlot(it.slotId);
+    setCName(it.name);
+    setCPrice(String(it.price));
+    setCSvg(it.svg);
+    setCRigid(!!it.rigid);
+    setShowCreate(true);
+  }
 
   async function post(body: Record<string, unknown>, busyKey: string) {
     setBusy(busyKey);
@@ -59,12 +82,15 @@ export default function SuperItemsClient({
     }
     setCreating(true);
     const ok = await post(
-      { create: true, slot: cSlot, name: cName, price: cPrice, svg: cSvg, rigid: cRigid },
+      editingId
+        ? { id: editingId, name: cName, price: cPrice, svg: cSvg, rigid: cRigid }
+        : { create: true, slot: cSlot, name: cName, price: cPrice, svg: cSvg, rigid: cRigid },
       "create"
     );
     setCreating(false);
     if (ok) {
       setShowCreate(false);
+      setEditingId(null);
       setCName("");
       setCSvg("");
     }
@@ -86,8 +112,21 @@ export default function SuperItemsClient({
             </option>
           ))}
         </select>
-        <button className="btn btn-sm" onClick={() => setShowCreate((v) => !v)}>
-          {showCreate ? "등록 닫기" : "＋ 커스텀 아이템 등록"}
+        <button
+          className="btn btn-sm"
+          onClick={() => {
+            if (showCreate) {
+              setShowCreate(false);
+              setEditingId(null);
+            } else {
+              setEditingId(null);
+              setCName("");
+              setCSvg("");
+              setShowCreate(true);
+            }
+          }}
+        >
+          {showCreate ? "폼 닫기" : "＋ 커스텀 아이템 등록"}
         </button>
       </div>
 
@@ -97,6 +136,8 @@ export default function SuperItemsClient({
             <select
               value={cSlot}
               onChange={(e) => setCSlot(e.target.value)}
+              disabled={!!editingId}
+              title={editingId ? "수정 시 슬롯은 변경할 수 없어요" : undefined}
               style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", fontSize: 13 }}
             >
               {slots.map((s) => (
@@ -147,18 +188,42 @@ export default function SuperItemsClient({
               }}
             />
             <div style={{ textAlign: "center" }}>
-              <svg
-                viewBox="0 0 320 400"
-                width={120}
-                height={150}
-                style={{ border: "1px dashed var(--border)", borderRadius: 8, background: "#fafbfc" }}
-                dangerouslySetInnerHTML={{
-                  __html:
-                    `<circle cx="160" cy="120" r="56" fill="#f4e1cf" opacity="0.45"/>
-                     <path d="M124 176 Q160 164 196 176 L199 268 Q160 280 121 268 Z" fill="#f4e1cf" opacity="0.45"/>` +
-                    cSvg,
+              <div
+                style={{
+                  border: "1px dashed var(--border)",
+                  borderRadius: 8,
+                  background: "#fafbfc",
+                  overflow: "hidden",
                 }}
-              />
+              >
+                <AvatarFullV2
+                  data={{
+                    v: 2,
+                    face: DEFAULT_AVATAR_V2.face,
+                    equipped: cSvg.trim() ? { [cSlot]: PREVIEW_ID } : {},
+                  }}
+                  width={130}
+                  uid="iprev"
+                  noBg
+                  className={walkPrev ? "av-walk" : undefined}
+                />
+              </div>
+              <label
+                style={{
+                  fontSize: 12,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  marginTop: 4,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={walkPrev}
+                  onChange={(e) => setWalkPrev(e.target.checked)}
+                />
+                🚶 걷기 (rigid 효과 확인)
+              </label>
               <div className="muted" style={{ fontSize: 11 }}>실시간 미리보기</div>
             </div>
           </div>
@@ -168,8 +233,13 @@ export default function SuperItemsClient({
             onClick={createItem}
             disabled={creating}
           >
-            {creating ? "등록 중…" : "등록"}
+            {creating ? "저장 중…" : editingId ? "✏️ 수정 저장" : "등록"}
           </button>
+          {editingId && (
+            <span className="muted" style={{ fontSize: 12, marginLeft: 8 }}>
+              수정 중: {editingId}
+            </span>
+          )}
         </div>
       )}
 
@@ -236,6 +306,15 @@ export default function SuperItemsClient({
                 >
                   {busy === it.id ? "…" : it.active ? "✅ 판매중" : "⛔ 비활성"}
                 </button>
+                {it.custom && (
+                  <button
+                    className="btn btn-sm"
+                    style={{ marginLeft: 6 }}
+                    onClick={() => startEdit(it)}
+                  >
+                    ✏️ 수정
+                  </button>
+                )}
               </td>
               <td style={{ padding: "6px 10px", borderBottom: "1px solid var(--border)", fontSize: 12 }} className="muted">
                 {prices[it.id] !== undefined && prices[it.id] !== String(it.price)

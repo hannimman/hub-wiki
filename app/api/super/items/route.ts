@@ -68,7 +68,8 @@ export async function POST(req: Request) {
       fields.name = body.name.trim().slice(0, 40);
 
     if (id.startsWith("cust-")) {
-      // 커스텀 아이템 직접 수정 (svg 교체 허용)
+      // 커스텀 아이템 직접 수정 (svg/rigid 교체 허용)
+      if (typeof body.rigid === "boolean") fields.rigid = body.rigid;
       if (typeof body.svg === "string" && body.svg.trim()) {
         const svg = body.svg.trim();
         if (svg.length > 20000 || /\bid\s*=/.test(svg) ||

@@ -169,8 +169,13 @@ export default function PageEditor({
         return;
       }
       if (data.drop) {
-        // 🎁 글 작성 보너스 드롭 — 이동 전에 알림
-        alert(`🎁 아이템 획득!\n「${data.drop.name}」을(를) 얻었어요! 인벤토리를 확인해보세요.`);
+        // 🎁 새 글 복권 — 이동 전에 알림 (왜 받았는지 알 수 있게 스토리텔링)
+        alert(
+          `🎉 새 글 복권 당첨!\n\n` +
+            `방금 쓴 글에 복권이 한 장 따라왔는데... 긁어보니 당첨이에요!\n` +
+            `🎁 「${data.drop.name}」 획득 — 인벤토리에 넣어드렸어요.\n\n` +
+            `(정성껏 글을 쓰면 가끔 복권이 따라옵니다 ✍️🍀)`
+        );
       }
       router.push(`/wiki/${data.slug}`);
       router.refresh();

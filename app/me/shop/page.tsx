@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { getPoints, listOwned } from "@/lib/points";
+import { getPoints, listOwned, getPointConfig } from "@/lib/points";
 import {
   isV2,
   DEFAULT_AVATAR_V2,
@@ -16,10 +16,11 @@ export default async function ShopPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [points, owned, catalog] = await Promise.all([
+  const [points, owned, catalog, pointCfg] = await Promise.all([
     getPoints(user.id),
     listOwned(user.id),
     getEffectiveCatalog(), // 기본 + DB 오버라이드/커스텀 병합본
+    getPointConfig(),
   ]);
 
   // 레거시 아바타 유저는 v2 기본값으로 시작 (저장하면 v2 로 전환)
@@ -44,6 +45,7 @@ export default async function ShopPage() {
         initialOwned={owned}
         initialPoints={points}
         catalogBySlot={catalog.bySlot}
+        gachaCost={pointCfg.gachaCost}
       />
     </main>
   );

@@ -65,7 +65,7 @@ export const REASON_LABEL: Record<string, string> = {
   gift_sent: "선물 보냄",
   gift_received: "선물 받음",
   gacha: "가챠",
-  item_drop: "아이템 획득 (글 작성 보너스)",
+  item_drop: "새 글 복권 당첨 🎉",
 };
 
 export type PointTx = {

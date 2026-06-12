@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 // 흉상 아이콘 + 호버 풀착장 팝업 + (owner 정보가 있으면) 클릭 시 아바타 카드 모달.
 // 카드 모달: 전신 아바타 + 이름 + 본인이 아니면 🎁 포인트 선물 폼.
@@ -33,6 +34,7 @@ export default function BustHover({
   ownerId?: string | null; // 이 아바타의 주인 — 있으면 클릭 시 카드 모달
   ownerName?: string | null;
 }) {
+  const router = useRouter();
   const ref = useRef<HTMLSpanElement>(null);
   const timer = useRef<number | null>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
@@ -79,6 +81,7 @@ export default function BustHover({
     if (res.ok) {
       setDone(true);
       setMe((m) => (m ? { ...m, points: m.points - n } : m));
+      router.refresh(); // 헤더 잔액 갱신
     } else {
       const d = await res.json().catch(() => ({}));
       alert(d.error ?? "선물에 실패했습니다.");

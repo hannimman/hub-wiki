@@ -10,6 +10,14 @@ import type { VillageMember } from "@/lib/home";
 
 const CHAR_W = 120;
 const POSES = ["av-wave", "av-dance", "av-hop"];
+const GREETINGS = [
+  "안녕하세요! 👋",
+  "오늘 패션 어때요?",
+  "찍어주세요! 📸",
+  "다들 멋지죠? ✨",
+  "런웨이 데뷔예요!",
+  "후후, 긴장되네요",
+];
 
 // 관객 실루엣 좌표 (좌/우 객석, viewBox 800x420) — 결정적 배치
 const AUDIENCE: { x: number; y: number; r: number }[] = [];
@@ -85,6 +93,23 @@ export default function TeamRunway({ members }: { members: VillageMember[] }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [walker, setWalker] = useState(0);
   const [posing, setPosing] = useState(false);
+  const [line, setLine] = useState<string | null>(null); // 포즈 때 한마디 말풍선
+
+  // 등장 순서 랜덤 — SSR 불일치를 피하려고 초기엔 등록순, 마운트 후 셔플
+  const [order, setOrder] = useState<number[]>(() =>
+    members.map((_, i) => i)
+  );
+  useEffect(() => {
+    setOrder((prev) => {
+      const n = [...prev];
+      for (let i = n.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [n[i], n[j]] = [n[j], n[i]];
+      }
+      return n;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members.length]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -135,14 +160,21 @@ export default function TeamRunway({ members }: { members: VillageMember[] }) {
       if (!alive) return;
       svg.classList.remove("av-walk");
       setPosing(true);
+      // 포즈 때 한마디 — 등록한 "오늘의 한마디"가 있으면 그 말, 없으면 랜덤
+      const m = members[order[walker % order.length] ?? 0];
+      setLine(
+        m?.message?.trim() ||
+          GREETINGS[Math.floor(Math.random() * GREETINGS.length)]
+      );
       const act = POSES[Math.floor(Math.random() * POSES.length)];
       svg.classList.add(act);
       timers.push(
         window.setTimeout(() => {
           svg.classList.remove(act);
           setPosing(false);
+          setLine(null);
           walkUp();
-        }, 2300)
+        }, 2600)
       );
     };
 
@@ -167,10 +199,10 @@ export default function TeamRunway({ members }: { members: VillageMember[] }) {
       timers.forEach((t) => window.clearTimeout(t));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [walker, members.length]);
+  }, [walker, members.length, order]);
 
   if (members.length === 0) return null;
-  const m = members[walker % members.length];
+  const m = members[order[walker % order.length] ?? 0] ?? members[0];
 
   return (
     <div className="village runway" ref={stageRef}>
@@ -195,6 +227,7 @@ export default function TeamRunway({ members }: { members: VillageMember[] }) {
 
       {/* 워커 — walker 가 바뀌면 key 로 재마운트 */}
       <div className="runway-char" key={walker} style={{ width: CHAR_W }}>
+        {line && <div className="village-bubble">{line}</div>}
         <AvatarFullV2 data={m.data} width={CHAR_W} uid="rwy" noBg />
         <div className="plaza-name">{m.name}</div>
       </div>
