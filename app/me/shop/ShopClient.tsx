@@ -64,6 +64,19 @@ export default function ShopClient({
   const effItems = (slotId: string): (AvatarItem & { active?: boolean })[] =>
     catalogBySlot?.[slotId] ?? ITEMS[slotId] ?? [];
 
+  // 유효 카탈로그 우선 조회 (DB 가격 오버라이드 반영) → 기본 카탈로그 폴백
+  const lookupEff = (slotId: string, itemId: string) =>
+    effItems(slotId).find((i) => i.id === itemId) ?? findItem(slotId, itemId);
+
+  // 입어보는 중인 미보유 아이템 = 장바구니
+  const cart = Object.entries(preview)
+    .map(([slotId, id]) => (id ? { slotId, item: lookupEff(slotId, id) } : null))
+    .filter(
+      (e): e is { slotId: string; item: AvatarItem & { active?: boolean } } =>
+        !!e?.item && !owned.has(e.item.id)
+    );
+  const cartTotal = cart.reduce((sum, e) => sum + e.item.price, 0);
+
   function showToast(msg: string) {
     setToast(msg);
     window.setTimeout(() => setToast(null), 1800);
@@ -192,6 +205,49 @@ export default function ShopClient({
     setBusy(false);
   }
 
+  // ── 한번에 구매: 입어보는 중인 미보유 아이템 전부 일괄 구매 + 자동 장착 ──
+  async function onBuyAll() {
+    if (busy || cart.length === 0) return;
+    if (points < cartTotal) {
+      showToast(
+        `포인트가 부족해요! (${(cartTotal - points).toLocaleString()}P 더 필요)`
+      );
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/shop/buy", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ itemIds: cart.map((e) => e.item.id) }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast(d.error ?? "구매 실패");
+      } else {
+        const boughtIds: string[] = d.bought ?? [];
+        setOwned(new Set([...owned, ...boughtIds]));
+        setPoints(d.balance ?? points);
+        if (d.avatarConfig) setData(d.avatarConfig);
+        setPreview((prev) => {
+          const n = { ...prev };
+          for (const e of cart)
+            if (boughtIds.includes(e.item.id)) delete n[e.slotId];
+          return n;
+        });
+        showToast(
+          d.failed?.length
+            ? `${boughtIds.length}개 구매 완료, ${d.failed.length}개는 실패했어요`
+            : `${boughtIds.length}개 한번에 구매 완료! 바로 장착했어요 ✨`
+        );
+        router.refresh();
+      }
+    } catch {
+      showToast("네트워크 오류");
+    }
+    setBusy(false);
+  }
+
   // ── 카드 썸네일: 슬롯 zoom 크롭 + 고스트 몸체 ──
   function thumb(slot: Slot, item: AvatarItem) {
     const ghost = GHOST_SLOTS.has(slot.id)
@@ -295,10 +351,7 @@ export default function ShopClient({
             <button
               key={s.id}
               className={`shop-chip${s.id === shopSlot ? " active" : ""}`}
-              onClick={() => {
-                setShopSlot(s.id);
-                setPreview({});
-              }}
+              onClick={() => setShopSlot(s.id)}
             >
               {s.name}
             </button>
@@ -463,18 +516,41 @@ export default function ShopClient({
         />
         {previewing && (
           <div className="shop-stage-preview-note">
-            👀 입어보는 중 —{" "}
-            {Object.entries(preview)
-              .map(([s, id]) => findItem(s, id)?.name)
-              .filter(Boolean)
-              .join(", ")}
-            <button
-              className="btn btn-sm"
-              style={{ marginLeft: 8 }}
-              onClick={() => setPreview({})}
+            <div>
+              👀 입어보는 중 —{" "}
+              {cart
+                .map(
+                  (e) => `${e.item.name} ${e.item.price.toLocaleString()}P`
+                )
+                .join(" · ")}
+            </div>
+            <div
+              style={{
+                marginTop: 6,
+                display: "flex",
+                gap: 8,
+                justifyContent: "center",
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
             >
-              벗기
-            </button>
+              {cart.length > 0 && (
+                <button
+                  className="btn btn-sm btn-primary"
+                  disabled={busy || points < cartTotal}
+                  onClick={onBuyAll}
+                >
+                  {points < cartTotal
+                    ? `포인트 부족 — 합계 🪙 ${cartTotal.toLocaleString()}P`
+                    : `🛒 한번에 구매 — 🪙 ${cartTotal.toLocaleString()}P${
+                        cart.length > 1 ? ` (${cart.length}개)` : ""
+                      }`}
+                </button>
+              )}
+              <button className="btn btn-sm" onClick={() => setPreview({})}>
+                벗기
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -486,10 +562,7 @@ export default function ShopClient({
             <button
               key={t.id}
               className={`shop-tab${tab === t.id ? " active" : ""}`}
-              onClick={() => {
-                setTab(t.id);
-                setPreview({});
-              }}
+              onClick={() => setTab(t.id)}
             >
               {t.label}
             </button>
