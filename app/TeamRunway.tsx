@@ -225,8 +225,18 @@ export default function TeamRunway({ members }: { members: VillageMember[] }) {
         ))}
       </div>
 
-      {/* 워커 — walker 가 바뀌면 key 로 재마운트 */}
-      <div className="runway-char" key={walker} style={{ width: CHAR_W }}>
+      {/* 워커 — walker 가 바뀌면 key 로 재마운트.
+          첫 페인트가 앞쪽에서 번쩍이지 않도록 초기 스타일을 "무대 안쪽·투명"으로 깔고 시작 */}
+      <div
+        className="runway-char"
+        key={walker}
+        style={{
+          width: CHAR_W,
+          opacity: 0,
+          bottom: "50%",
+          transform: "translateX(-50%) scale(0.42)",
+        }}
+      >
         {line && <div className="village-bubble">{line}</div>}
         <AvatarFullV2 data={m.data} width={CHAR_W} uid="rwy" noBg />
         <div className="plaza-name">{m.name}</div>
