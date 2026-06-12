@@ -906,8 +906,19 @@ a {
   color: #334155;
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  animation: avPopIn 0.15s ease;
+  /* translateX(-50%) 를 키프레임에 포함해야 등장 중 오른쪽으로 밀리지 않는다 */
+  animation: bubblePop 0.15s ease;
   z-index: 250;
+}
+@keyframes bubblePop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
 }
 .village-bubble::after {
   content: "";
