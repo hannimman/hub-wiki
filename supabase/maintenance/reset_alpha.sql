@@ -63,7 +63,9 @@ select id,
        'signup'
 from public.users where role = 'super';
 
--- 9) 업로드 이미지 전부 삭제
-delete from storage.objects where bucket_id = 'wiki-images';
-
 commit;
+
+-- 9) 업로드 이미지는 SQL 로 못 지운다 (storage.protect_delete 트리거가 차단).
+--    둘 중 하나로 비우면 됨:
+--    a. Supabase 대시보드 → Storage → wiki-images → 전체 선택 → Delete
+--    b. Claude 에게 "스토리지 비워줘" 요청 (Storage API 스크립트로 처리)
