@@ -79,7 +79,7 @@ export default async function AdminFilesPage() {
                   <div className="muted" style={{ fontSize: 12 }}>
                     {fmtSize(f.size)}
                     {f.created_at
-                      ? ` · ${new Date(f.created_at).toLocaleString("ko-KR")}`
+                      ? ` · ${new Date(f.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false })}`
                       : ""}
                   </div>
                 </div>

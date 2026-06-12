@@ -153,7 +153,7 @@ export default async function MyPage() {
                   {p.title}
                 </Link>
                 <span className="muted" style={{ fontSize: 12 }}>
-                  {new Date(p.updated_at).toLocaleDateString("ko-KR")}
+                  {new Date(p.updated_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}
                 </span>
               </li>
             ))}

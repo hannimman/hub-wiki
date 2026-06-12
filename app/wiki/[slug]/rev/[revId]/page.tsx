@@ -34,7 +34,7 @@ export default async function RevDiffPage({
       </Link>
       <h1 style={{ marginTop: 8 }}>변경 내역</h1>
       <div style={{ color: "#999", fontSize: 13, marginBottom: 4 }}>
-        {new Date(cur.created_at).toLocaleString("ko-KR")}
+        {new Date(cur.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false })}
       </div>
       {cur.summary && (
         <div style={{ marginBottom: 16 }}>요약: {cur.summary}</div>

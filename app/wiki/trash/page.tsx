@@ -56,7 +56,7 @@ export default async function TrashPage() {
                 <div className="muted" style={{ fontSize: 12 }}>
                   {t.deleted_by_name ? `${t.deleted_by_name} 님이 삭제` : "삭제"}
                   {t.deleted_at
-                    ? ` · ${new Date(t.deleted_at).toLocaleString("ko-KR")}`
+                    ? ` · ${new Date(t.deleted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false })}`
                     : ""}
                 </div>
               </div>

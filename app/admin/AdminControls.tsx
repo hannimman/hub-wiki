@@ -219,7 +219,7 @@ export default function AdminControls({
                   <td style={td}>{ROLE_LABEL[iv.role]}</td>
                   <td style={td}>{iv.email || "-"}</td>
                   <td style={{ ...td, color: "#999", fontSize: 12 }}>
-                    만료 {new Date(iv.expires_at).toLocaleDateString("ko-KR")}
+                    만료 {new Date(iv.expires_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}
                   </td>
                   <td style={td}>
                     <button onClick={() => copy(linkFor(iv.token))} style={{ ...inputStyle, cursor: "pointer", marginRight: 6 }}>

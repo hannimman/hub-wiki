@@ -72,7 +72,7 @@ export default function PointHistoryButton({ txs }: { txs: PointTx[] }) {
                       className="muted"
                       style={{ fontSize: 11.5, whiteSpace: "nowrap" }}
                     >
-                      {new Date(t.created_at).toLocaleDateString("ko-KR")}
+                      {new Date(t.created_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}
                     </span>
                   </li>
                 ))}

@@ -92,7 +92,7 @@ export default async function AdminPointsPage() {
             {recent.map((t) => (
               <tr key={t.id}>
                 <td style={{ ...td, whiteSpace: "nowrap" }}>
-                  {new Date(t.created_at).toLocaleString("ko-KR")}
+                  {new Date(t.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false })}
                 </td>
                 <td style={td}>{t.userName}</td>
                 <td

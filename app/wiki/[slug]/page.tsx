@@ -225,7 +225,7 @@ export default async function PageView({
         style={{ fontSize: 13, marginBottom: 20, flexWrap: "wrap", gap: 8 }}
       >
         <span>
-          마지막 수정 {new Date(page.updated_at).toLocaleString("ko-KR")}
+          마지막 수정 {new Date(page.updated_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false })}
         </span>
       </div>
 

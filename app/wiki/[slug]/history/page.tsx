@@ -50,7 +50,7 @@ export default async function HistoryPage({
                 )}
               </div>
               <div style={{ color: "#999", fontSize: 12 }}>
-                {new Date(r.created_at).toLocaleString("ko-KR")}
+                {new Date(r.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false })}
                 {r.summary ? ` · ${r.summary}` : ""}
               </div>
               <Link

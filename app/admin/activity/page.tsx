@@ -22,7 +22,7 @@ const td: React.CSSProperties = {
 };
 
 function fmt(d: string | null) {
-  return d ? new Date(d).toLocaleDateString("ko-KR") : "—";
+  return d ? new Date(d).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" }) : "—";
 }
 
 // 사용자별 작성·기여 활동. 행 클릭(?user=) → 하단에 작성글/기여글 목록.

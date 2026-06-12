@@ -94,7 +94,7 @@ export default async function WikiHome({
                   {p.title}
                 </Link>
                 <div className="muted" style={{ fontSize: 12 }}>
-                  {new Date(p.updated_at).toLocaleString("ko-KR")}
+                  {new Date(p.updated_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false })}
                 </div>
               </li>
             ))}
@@ -134,7 +134,7 @@ export default async function WikiHome({
                     </Link>
                     <div className="muted" style={{ fontSize: 12 }}>
                       {c.author_name ?? "알 수 없음"} ·{" "}
-                      {new Date(c.created_at).toLocaleString("ko-KR")}
+                      {new Date(c.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false })}
                       {c.summary ? ` · ${c.summary}` : ""}
                     </div>
                   </div>

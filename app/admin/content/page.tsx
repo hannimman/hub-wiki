@@ -23,7 +23,7 @@ function DocList({ docs, empty }: { docs: HealthDoc[]; empty: string }) {
             {d.title}
           </Link>
           <span className="muted" style={{ fontSize: 12 }}>
-            마지막 수정 {new Date(d.updated_at).toLocaleDateString("ko-KR")}
+            마지막 수정 {new Date(d.updated_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}
           </span>
         </li>
       ))}

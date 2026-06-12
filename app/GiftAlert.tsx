@@ -109,7 +109,7 @@ export default function GiftAlert({
                   </div>
                 )}
                 <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>
-                  {mounted ? new Date(n.created_at).toLocaleString("ko-KR") : " "}
+                  {mounted ? new Date(n.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false }) : " "}
                 </div>
               </li>
             );

@@ -50,7 +50,7 @@ export default async function RecentChangesPage() {
                 </Link>
                 <div style={{ color: "#999", fontSize: 12 }}>
                   {c.author_name ?? "알 수 없음"} ·{" "}
-                  {new Date(c.created_at).toLocaleString("ko-KR")}
+                  {new Date(c.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false })}
                   {c.summary ? ` · ${c.summary}` : ""}
                 </div>
               </div>

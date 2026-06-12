@@ -42,7 +42,7 @@ export default async function TrashItemPage({
       <p className="muted" style={{ fontSize: 13, marginTop: 0 }}>
         {page.deleted_by_name ? `${page.deleted_by_name} 님이 삭제` : "삭제됨"}
         {page.deleted_at
-          ? ` · ${new Date(page.deleted_at).toLocaleString("ko-KR")}`
+          ? ` · ${new Date(page.deleted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false })}`
           : ""}
       </p>
 
