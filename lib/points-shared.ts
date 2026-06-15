@@ -66,7 +66,34 @@ export const REASON_LABEL: Record<string, string> = {
   gift_received: "선물 받음",
   gacha: "가챠",
   item_drop: "새 글 복권 당첨 🎉",
+  race_bet: "달리기 베팅",
+  race_win: "달리기 배당",
 };
+
+// ── 달리기 경주 베팅 ──
+// 1등에 걸지만 내 선수가 1·2·3등이면 차등 배당. 4등 이하면 판돈 잃음.
+//  · 1등 적중: 판돈 ×(출전인원 − 2)  (5명 ×3, 6명 ×4 …)
+//  · 2등: ×1.0 (본전)
+//  · 3등: ×0.8 (약간 손해)
+//  · 4등~: 0 (전액 잃음)
+export const RACE_BET = {
+  minRunners: 5, // 5명 이상일 때만 베팅 가능
+  maxStake: 50, // 1회 최대 판돈
+  dailyCount: 10, // 하루 최대 베팅 횟수
+  dailyTotal: 300, // 하루 최대 베팅 합계(판돈)
+} as const;
+
+// 등수별 배당 배수 (출전인원 n).
+export function racePayoutMult(place: number, n: number): number {
+  if (place === 1) return Math.max(1, n - 2);
+  if (place === 2) return 1.0;
+  if (place === 3) return 0.8;
+  return 0;
+}
+// 실제 지급액(정수). place 0/그외는 미적중.
+export function racePayout(place: number, n: number, stake: number): number {
+  return Math.round(racePayoutMult(place, n) * stake);
+}
 
 export type PointTx = {
   id: string;

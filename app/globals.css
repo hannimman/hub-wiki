@@ -922,6 +922,26 @@ a {
     transform: translateX(-50%) scale(1);
   }
 }
+/* 경주 실황 자막 — 가운데 정렬 배너용(가로 튐 없이 위로 살짝 + 페이드) */
+@keyframes captionFade {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* 경주 날씨 입자(비·눈)가 위에서 아래로 떨어지는 효과 */
+@keyframes raceFall {
+  from {
+    transform: translateY(-12px);
+  }
+  to {
+    transform: translateY(260px);
+  }
+}
 .village-bubble::after {
   content: "";
   position: absolute;
@@ -1097,33 +1117,41 @@ a {
 .race-track {
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: linear-gradient(#fdf6e8, #f7eed9);
-  padding: 6px 10px;
+  background: #2b3450;
+  padding: 0;
+  overflow: hidden;
 }
 .race-lane {
   position: relative;
   height: 76px;
-  border-bottom: 1px dashed #e2d6bd;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.45);
 }
 .race-lane:last-child {
   border-bottom: none;
 }
 .race-name {
   position: absolute;
-  left: 4px;
-  top: 4px;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: 54px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 11px;
-  font-weight: 700;
-  color: #6b5d43;
-  z-index: 2;
-  background: rgba(255, 255, 255, 0.7);
+  font-weight: 800;
+  color: #2a2433;
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 999px;
-  padding: 1px 7px;
+  padding: 2px 7px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 .race-char {
   position: absolute;
   left: 0;
   bottom: 2px;
+  z-index: 2;
   will-change: transform;
 }
 .race-char svg {
@@ -1136,6 +1164,79 @@ a {
   top: 50%;
   transform: translateY(-50%);
   font-size: 18px;
+}
+.race-medal {
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 22px;
+  z-index: 3;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+/* 이벤트 효과 — 선수 머리 위 이모지 */
+.race-fx {
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  transform: translateX(-50%);
+  font-size: 20px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 4;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+@keyframes fxPop {
+  from {
+    transform: translateX(-50%) translateY(7px) scale(0.4);
+  }
+  to {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+/* 이벤트 효과 — 아바타 전체 움직임 (발 끝을 축으로 기울기) */
+.race-trip,
+.race-slip,
+.race-dash {
+  transform-origin: 50% 92%;
+}
+.race-trip {
+  animation: raceTrip 0.16s ease-in-out infinite;
+}
+@keyframes raceTrip {
+  0%,
+  100% {
+    transform: rotate(-8deg) translateY(0);
+  }
+  50% {
+    transform: rotate(9deg) translateY(-2px);
+  }
+}
+.race-slip {
+  animation: raceSlip 0.5s ease-out;
+}
+@keyframes raceSlip {
+  0% {
+    transform: rotate(0);
+  }
+  35% {
+    transform: rotate(-20deg) translateY(3px);
+  }
+  100% {
+    transform: rotate(-7deg);
+  }
+}
+.race-dash {
+  animation: raceDash 0.28s ease-in-out infinite;
+}
+@keyframes raceDash {
+  0%,
+  100% {
+    transform: rotate(10deg);
+  }
+  50% {
+    transform: rotate(14deg) translateY(-1px);
+  }
 }
 
 /* ── 도움말 물음표 + 호버 레이어 ── */

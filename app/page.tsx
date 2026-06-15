@@ -16,7 +16,7 @@ export default async function HomePage() {
   const scene = pickSceneByTime();
   // 접속할 때마다 마을 / 런웨이 중 하나가 랜덤으로
   const stageMode = Math.random() < 0.5 ? "village" : "runway";
-  // 경주 시드 — KST 날짜(전 멤버 동일 결과)
+  // 경주 시드 — KST 날짜. (사람마다 다른 결과를 주려고 viewer id 를 함께 섞는다)
   const dateSeed = new Date(Date.now() + 9 * 3600 * 1000)
     .toISOString()
     .slice(0, 10);
@@ -55,7 +55,7 @@ export default async function HomePage() {
           <Link href="/wiki/changes" className="btn">
             🕒 최근 변경
           </Link>
-          <TeamRace members={members} dateSeed={dateSeed} />
+          <TeamRace members={members} dateSeed={dateSeed} viewerId={user.id} />
         </div>
       ) : (
         <div className="row" style={{ flexWrap: "wrap", alignItems: "center" }}>

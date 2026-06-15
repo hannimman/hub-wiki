@@ -18,6 +18,10 @@ function describe(t: PointTx): string {
   if ((t.reason === "grant" || t.reason === "event") && t.ref) {
     return `${label} · ${t.ref}`;
   }
+  if ((t.reason === "race_bet" || t.reason === "race_win") && t.ref) {
+    // ref 에 "강성현" / "강성현 1위 적중" 같은 텍스트가 그대로 들어온다
+    return `${label} · ${t.ref}`;
+  }
   return label;
 }
 
