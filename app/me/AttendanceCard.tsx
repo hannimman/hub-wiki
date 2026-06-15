@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// 출석 체크 (1일 1회) — 누르면 +10P, 이미 했으면 안내만.
+// 출석 체크 (1일 1회) — 누르면 설정된 출석 포인트 적립, 이미 했으면 안내만.
 export default function AttendanceCard({
   checkedIn,
+  amount,
 }: {
   checkedIn: boolean;
+  amount: number; // 설정된 출석 적립 포인트 (슈퍼 제어판)
 }) {
   const router = useRouter();
   const [done, setDone] = useState(checkedIn);
@@ -43,7 +45,11 @@ export default function AttendanceCard({
         onClick={checkIn}
         disabled={loading || done}
       >
-        {done ? "✅ 오늘 출석 완료" : loading ? "출석 중…" : "📅 출석 체크 (+10P)"}
+        {done
+          ? "✅ 오늘 출석 완료"
+          : loading
+          ? "출석 중…"
+          : `📅 출석 체크 (+${amount.toLocaleString()}P)`}
       </button>
       {msg && <span style={{ fontSize: 13.5 }}>{msg}</span>}
     </div>

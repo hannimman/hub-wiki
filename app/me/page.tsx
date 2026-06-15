@@ -12,6 +12,7 @@ import {
   hasCheckedInToday,
   listTransactions,
   resolveUserNames,
+  getPointConfig,
 } from "@/lib/points";
 import { listMyPrivatePages } from "@/lib/pages";
 import AttendanceCard from "./AttendanceCard";
@@ -30,11 +31,12 @@ export default async function MyPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [points, checkedIn, rawTxs, privatePages] = await Promise.all([
+  const [points, checkedIn, rawTxs, privatePages, pointCfg] = await Promise.all([
     getPoints(user.id),
     hasCheckedInToday(user.id),
     listTransactions(user.id, 30),
     listMyPrivatePages(user.id),
+    getPointConfig(),
   ]);
 
   // 선물 이력의 ref(상대 uuid)를 이름으로 바꿔 표시
@@ -115,7 +117,7 @@ export default async function MyPage() {
               </span>
               <PointHistoryButton txs={txs} />
             </div>
-            <AttendanceCard checkedIn={checkedIn} />
+            <AttendanceCard checkedIn={checkedIn} amount={pointCfg.attendance} />
           </div>
         </div>
       </div>
