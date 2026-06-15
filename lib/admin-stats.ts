@@ -260,6 +260,71 @@ export async function getRatingsOverview(): Promise<RatingsOverview> {
   return { global: { total, avg, raters }, pages: pageRows, users: userRows };
 }
 
+// ── ③-상세: 한 사용자가 받은 평가 (작성글별 집계 — 평가자 익명 유지) ──
+export type UserRatingDoc = {
+  id: string;
+  slug: string;
+  title: string;
+  avg: number; // 정수 반올림 (글별)
+  count: number;
+  dist: number[]; // 길이 11, index = score/10 (0,10,…,100점 분포)
+};
+export type UserRatingsDetail = {
+  user: StatUser | null;
+  docs: UserRatingDoc[];
+  totalAvg: number | null;
+  totalCount: number;
+};
+
+export async function getUserRatingsDetail(
+  userId: string
+): Promise<UserRatingsDetail> {
+  const { users, pages, ratings } = await fetchBase();
+  const user = users.find((u) => u.id === userId) ?? null;
+  const liveDocs = pages.filter(
+    (p) => !p.is_deleted && !p.is_folder && !p.is_private
+  );
+  const myDocIds = new Set(
+    liveDocs.filter((p) => p.created_by === userId).map((p) => p.id)
+  );
+
+  const scoresByPage = new Map<string, number[]>();
+  for (const r of ratings) {
+    if (!myDocIds.has(r.page_id)) continue;
+    const arr = scoresByPage.get(r.page_id) ?? [];
+    arr.push(r.score);
+    scoresByPage.set(r.page_id, arr);
+  }
+
+  const docs: UserRatingDoc[] = liveDocs
+    .filter((p) => scoresByPage.has(p.id))
+    .map((p) => {
+      const scores = scoresByPage.get(p.id)!;
+      const count = scores.length;
+      const sum = scores.reduce((s, v) => s + v, 0);
+      const dist = Array<number>(11).fill(0);
+      for (const s of scores) dist[Math.round(s / 10)]++;
+      return {
+        id: p.id,
+        slug: p.slug,
+        title: p.title,
+        avg: Math.round(sum / count),
+        count,
+        dist,
+      };
+    })
+    .sort((a, b) => b.count - a.count || b.avg - a.avg);
+
+  const totalCount = docs.reduce((s, d) => s + d.count, 0);
+  const totalSum = docs.reduce((s, d) => s + d.avg * d.count, 0);
+  return {
+    user,
+    docs,
+    totalAvg: totalCount ? Math.round(totalSum / totalCount) : null,
+    totalCount,
+  };
+}
+
 // ── (c) 콘텐츠 건강 리포트 ──
 export type HealthDoc = { id: string; slug: string; title: string; updated_at: string };
 export type ContentHealth = {
